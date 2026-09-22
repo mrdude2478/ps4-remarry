@@ -1,0 +1,26 @@
+# Build outputs
+bin/
+obj/
+publish/
+*.user
+*.suo
+*.userprefs
+
+# IDE
+.vs/
+.vscode/
+.idea/
+
+# External tools — large, not ours to distribute
+tools/
+
+# Scratch / logs
+*.log
+*.gp4
+.ps4repack.log
+compare_delta.log
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
