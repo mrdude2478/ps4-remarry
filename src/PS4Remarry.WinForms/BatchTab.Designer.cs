@@ -176,7 +176,6 @@ partial class BatchTab
         txtLog.ReadOnly = true;
         txtLog.Size = new Size(781, 231);
         txtLog.TabIndex = 2;
-        txtLog.WordWrap = false;
         // 
         // BatchTab
         // 

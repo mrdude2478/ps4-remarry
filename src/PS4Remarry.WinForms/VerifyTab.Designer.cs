@@ -188,7 +188,6 @@ partial class VerifyTab
         txtLog.ReadOnly = true;
         txtLog.Size = new Size(791, 245);
         txtLog.TabIndex = 13;
-        txtLog.WordWrap = false;
         // 
         // VerifyTab
         // 

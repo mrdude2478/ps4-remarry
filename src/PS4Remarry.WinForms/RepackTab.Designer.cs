@@ -192,7 +192,6 @@ partial class RepackTab
         txtLog.Size = new Size(790, 330);
         txtLog.TabIndex = 13;
         txtLog.Text = "";
-        txtLog.WordWrap = false;
         // 
         // RepackTab
         // 
