@@ -24,3 +24,4 @@ compare_delta.log
 Thumbs.db
 Desktop.ini
 .DS_Store
+*.ps1

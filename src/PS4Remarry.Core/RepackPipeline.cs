@@ -8,7 +8,13 @@ public sealed record RepackExtractOptions(
 public sealed record RepackBuildOptions(
     string ExtractFolder,
     string OutputFolder,
-    string WorkDir);
+    string WorkDir,
+    /// <summary>
+    /// For patch (update) repacks, the path to the base game PKG. It gets
+    /// written into the GP4 as app_path so the update is married to the game.
+    /// Null or empty for base game repacks.
+    /// </summary>
+    string? BaseGamePkg = null);
 
 public sealed record RepackInspection(
     string SourcePkg,
@@ -22,17 +28,93 @@ public sealed record RepackInspection(
 /// <summary>
 /// Extracts a PS4 PKG into a folder ready for modification and repacking,
 /// and rebuilds a new PKG from that folder. Games and updates only.
+///
+/// For updates (CATEGORY=gp), three fixes are applied to the GP4 produced
+/// by gengp4_patch.exe before img_create runs:
+///   1. volume_type is changed from pkg_ps4_app to pkg_ps4_patch.
+///   2. storage_type is changed from digital50 to digital25.
+///   3. app_path is added, pointing at the base game PKG.
+///
+/// The original param.sfo is backed up during extraction and restored
+/// after GP4 generation, because gengp4_patch.exe rewrites APP_VER and
+/// VERSION inside it.
+///
+/// These fixes mean the pipeline works with stock, unpatched SDK tools.
 /// </summary>
 public sealed class RepackPipeline
 {
     private readonly ProcessRunner _runner;
     private readonly ToolLocator  _tools;
 
+    private const string ParamSfoBackupSuffix = ".ps4repack.param.sfo.bak";
+
     public RepackPipeline(ProcessRunner runner, ToolLocator tools)
     {
         _runner = runner;
-        _tools  = tools;
+        _tools = tools;
     }
+
+    /// <summary>
+    /// Path to the param.sfo backup that sits next to the extract folder.
+    /// Public so the UI can clean it up when the extract folder is deleted.
+    /// </summary>
+    public static string GetParamSfoBackupPath(string extractFolder)
+    {
+        var trimmed = extractFolder.TrimEnd(
+            Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        return trimmed + ParamSfoBackupSuffix;
+    }
+
+    /// <summary>
+    /// Returns every file that this pipeline may have created outside the
+    /// extract folder for a given extraction. Currently that's the param.sfo
+    /// backup and any .gp4 file that gengp4_patch.exe wrote next to the
+    /// extract folder.
+    ///
+    /// The GP4 name may not match the extract folder's name exactly —
+    /// gengp4_patch.exe truncates long filenames — so we scan the parent
+    /// folder for .gp4 files whose name is either equal to the extract
+    /// folder name or a prefix of it (or vice versa).
+    /// </summary>
+    public static IEnumerable<string> GetOrphanedFiles(string extractFolder)
+    {
+        // The param.sfo backup has a deterministic name we control.
+        yield return GetParamSfoBackupPath(extractFolder);
+
+        // The GP4 is written by the tool next to the extract folder. Its
+        // name may be truncated, so scan the parent folder instead of
+        // trying to compute the exact path.
+        var trimmed = extractFolder.TrimEnd(
+            Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var folderName = Path.GetFileName(trimmed);
+        var parent = Path.GetDirectoryName(trimmed);
+
+        if (string.IsNullOrEmpty(parent) || !Directory.Exists(parent))
+            yield break;
+
+        foreach (var gp4 in Directory.EnumerateFiles(parent, "*.gp4"))
+        {
+            var baseName = Path.GetFileNameWithoutExtension(gp4);
+            if (NamesRelate(folderName, baseName))
+                yield return gp4;
+        }
+    }
+
+    /// <summary>
+    /// Returns true if two filenames (without extension) refer to the same
+    /// extraction, allowing for truncation by the tool that wrote the GP4.
+    /// A matches B if either is a prefix of the other.
+    /// </summary>
+    private static bool NamesRelate(string a, string b)
+    {
+        if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b)) return false;
+        if (string.Equals(a, b, StringComparison.OrdinalIgnoreCase)) return true;
+        if (a.StartsWith(b, StringComparison.OrdinalIgnoreCase)) return true;
+        if (b.StartsWith(a, StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
+    }
+
+    // ---------- inspect ----------
 
     public RepackInspection Inspect(string sourcePkg)
     {
@@ -76,6 +158,8 @@ public sealed class RepackPipeline
         };
     }
 
+    // ---------- extract ----------
+
     public async Task ExtractAsync(
         RepackExtractOptions opts,
         IProgress<ProgressReport>? progress = null,
@@ -83,7 +167,6 @@ public sealed class RepackPipeline
     {
         _tools.EnsureToolsExist();
 
-        // SAFETY: refuse to run unless the work dir is inside tools\Work.
         if (!IsInsideWorkRoot(opts.WorkDir, _tools.WorkDir))
             throw new InvalidOperationException(
                 $"Refusing to run: work directory '{opts.WorkDir}' is not inside " +
@@ -192,6 +275,26 @@ public sealed class RepackPipeline
                 progress?.Report(ProgressReport.Log("[warn] param.sfo is missing. Repack will fail without it."));
             }
 
+            // Back up the original param.sfo. gengp4_patch.exe rewrites
+            // APP_VER and VERSION inside it during GP4 generation. The
+            // backup lives NEXT TO the extract folder (not inside it) so
+            // gengp4_patch doesn't include it in the built PKG.
+            if (paramSfoExists)
+            {
+                var backupPath = GetParamSfoBackupPath(extractFull);
+                try
+                {
+                    File.Copy(paramSfoPath, backupPath, overwrite: true);
+                    progress?.Report(ProgressReport.Log(
+                        $"  param.sfo backup: {Path.GetFileName(backupPath)}"));
+                }
+                catch (Exception ex)
+                {
+                    progress?.Report(ProgressReport.Log(
+                        $"  [warn] could not back up param.sfo: {ex.Message}"));
+                }
+            }
+
             var log = new RepackExtractLog
             {
                 SourcePkg      = sourceFull,
@@ -217,6 +320,7 @@ public sealed class RepackPipeline
         catch
         {
             try { FileSystemUtil.TryDeleteDirectory(extractFull); } catch { }
+            try { FileSystemUtil.TryDeleteFile(GetParamSfoBackupPath(extractFull)); } catch { }
             throw;
         }
         finally
@@ -230,6 +334,8 @@ public sealed class RepackPipeline
         }
     }
 
+    // ---------- repack ----------
+
     public async Task<string> RepackAsync(
         RepackBuildOptions opts,
         IProgress<ProgressReport>? progress = null,
@@ -237,7 +343,6 @@ public sealed class RepackPipeline
     {
         _tools.EnsureToolsExist();
 
-        // SAFETY: refuse to run unless the work dir is inside tools\Work.
         if (!IsInsideWorkRoot(opts.WorkDir, _tools.WorkDir))
             throw new InvalidOperationException(
                 $"Refusing to run: work directory '{opts.WorkDir}' is not inside " +
@@ -306,6 +411,8 @@ public sealed class RepackPipeline
                 "param.sfo is missing from sce_sys — cannot repack.", paramSfoPath);
 
         bool isBaseGame = category.Equals("gd", StringComparison.OrdinalIgnoreCase) || keystoneNeeded;
+        bool isPatch    = category.Equals("gp", StringComparison.OrdinalIgnoreCase);
+
         var genExe = isBaseGame ? _tools.Gengp4App : _tools.Gengp4Patch;
         progress?.Report(ProgressReport.Log(
             $"[repack] using {Path.GetFileName(genExe)} ({(isBaseGame ? "base game" : "patch/update")})"));
@@ -338,6 +445,133 @@ public sealed class RepackPipeline
                     throw new FileNotFoundException(
                         "GP4 was not produced by " + Path.GetFileName(genExe) + ".");
                 gp4Path = found;
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // Patch fixes. gengp4_patch.exe produces a GP4 with the wrong
+        // volume_type, wrong storage_type, and no app_path reference.
+        // Fix all three so the built PKG is a proper patch married to the
+        // base game. This means we work with stock, unpatched SDK tools.
+        // ------------------------------------------------------------------
+        if (isPatch)
+        {
+            try
+            {
+                var gp4Text = File.ReadAllText(gp4Path);
+                bool changed = false;
+
+                // --- Fix 1: volume_type pkg_ps4_app -> pkg_ps4_patch ---
+                if (gp4Text.Contains("<volume_type>pkg_ps4_app</volume_type>"))
+                {
+                    gp4Text = gp4Text.Replace(
+                        "<volume_type>pkg_ps4_app</volume_type>",
+                        "<volume_type>pkg_ps4_patch</volume_type>");
+                    changed = true;
+                    progress?.Report(ProgressReport.Log(
+                        "[repack] changed volume_type to \"pkg_ps4_patch\"."));
+                }
+                else if (gp4Text.Contains("<volume_type>pkg_ps4_patch</volume_type>"))
+                {
+                    progress?.Report(ProgressReport.Log(
+                        "[repack] GP4 already has volume_type pkg_ps4_patch."));
+                }
+
+                // --- Fix 2: storage_type digital50 -> digital25 ---
+                if (gp4Text.Contains("storage_type=\"digital50\""))
+                {
+                    gp4Text = gp4Text.Replace(
+                        "storage_type=\"digital50\"",
+                        "storage_type=\"digital25\"");
+                    changed = true;
+                    progress?.Report(ProgressReport.Log(
+                        "[repack] changed storage_type to \"digital25\"."));
+                }
+                else if (gp4Text.Contains("storage_type=\"digital25\""))
+                {
+                    progress?.Report(ProgressReport.Log(
+                        "[repack] GP4 already has storage_type digital25."));
+                }
+
+                // --- Fix 3: add app_path pointing at the base game ---
+                if (string.IsNullOrWhiteSpace(opts.BaseGamePkg) || !File.Exists(opts.BaseGamePkg))
+                {
+                    progress?.Report(ProgressReport.Log(
+                        "[repack] [warn] no base game PKG provided for patch repack."));
+                    progress?.Report(ProgressReport.Log(
+                        "[repack] [warn] the built update will not be married to a game."));
+                }
+                else if (!gp4Text.Contains("app_path="))
+                {
+                    var appPath = Path.GetFullPath(opts.BaseGamePkg)
+                        .Replace("&", "&amp;")
+                        .Replace("\"", "&quot;");
+
+                    int pkgStart = gp4Text.IndexOf("<package ", StringComparison.OrdinalIgnoreCase);
+                    if (pkgStart >= 0)
+                    {
+                        int pkgEnd = gp4Text.IndexOf("/>", pkgStart, StringComparison.Ordinal);
+                        if (pkgEnd >= 0)
+                        {
+                            gp4Text = gp4Text.Substring(0, pkgEnd)
+                                    + $" app_path=\"{appPath}\" "
+                                    + gp4Text.Substring(pkgEnd);
+                            changed = true;
+                            progress?.Report(ProgressReport.Log(
+                                $"[repack] added app_path=\"{opts.BaseGamePkg}\" to GP4."));
+                        }
+                        else
+                        {
+                            progress?.Report(ProgressReport.Log(
+                                "[repack] [warn] could not find \"/>\" in <package> element."));
+                        }
+                    }
+                    else
+                    {
+                        progress?.Report(ProgressReport.Log(
+                            "[repack] [warn] could not find <package> element in GP4."));
+                    }
+                }
+                else
+                {
+                    progress?.Report(ProgressReport.Log(
+                        "[repack] GP4 already has app_path; leaving as-is."));
+                }
+
+                if (changed)
+                    File.WriteAllText(gp4Path, gp4Text);
+            }
+            catch (Exception ex)
+            {
+                progress?.Report(ProgressReport.Log(
+                    $"[repack] [warn] could not modify GP4: {ex.Message}"));
+            }
+
+            // ------------------------------------------------------------------
+            // Restore the original param.sfo. gengp4_patch.exe rewrites
+            // APP_VER and VERSION inside param.sfo during GP4 generation.
+            // Put the original back so the built PKG has correct version
+            // info and CATEGORY.
+            // ------------------------------------------------------------------
+            var backupPath = GetParamSfoBackupPath(extractFull);
+            if (File.Exists(backupPath))
+            {
+                try
+                {
+                    File.Copy(backupPath, paramSfoPath, overwrite: true);
+                    progress?.Report(ProgressReport.Log(
+                        "[repack] restored original param.sfo after GP4 generation."));
+                }
+                catch (Exception ex)
+                {
+                    progress?.Report(ProgressReport.Log(
+                        $"[repack] [warn] could not restore param.sfo: {ex.Message}"));
+                }
+            }
+            else
+            {
+                progress?.Report(ProgressReport.Log(
+                    "[repack] [warn] no param.sfo backup found — using tool-modified version."));
             }
         }
 

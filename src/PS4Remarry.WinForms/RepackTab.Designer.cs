@@ -80,7 +80,7 @@ partial class RepackTab
         // 
         lblExtract.Anchor = AnchorStyles.None;
         lblExtract.AutoSize = true;
-        lblExtract.Location = new Point(4, 42);
+        lblExtract.Location = new Point(4, 37);
         lblExtract.Name = "lblExtract";
         lblExtract.Size = new Size(46, 15);
         lblExtract.TabIndex = 3;
@@ -89,7 +89,7 @@ partial class RepackTab
         // txtExtractFolder
         // 
         txtExtractFolder.Anchor = AnchorStyles.None;
-        txtExtractFolder.Location = new Point(56, 39);
+        txtExtractFolder.Location = new Point(56, 34);
         txtExtractFolder.Name = "txtExtractFolder";
         txtExtractFolder.Size = new Size(642, 23);
         txtExtractFolder.TabIndex = 4;
@@ -97,7 +97,7 @@ partial class RepackTab
         // btnBrowseExtract
         // 
         btnBrowseExtract.Anchor = AnchorStyles.None;
-        btnBrowseExtract.Location = new Point(704, 39);
+        btnBrowseExtract.Location = new Point(704, 33);
         btnBrowseExtract.Name = "btnBrowseExtract";
         btnBrowseExtract.Size = new Size(90, 25);
         btnBrowseExtract.TabIndex = 5;
@@ -107,9 +107,9 @@ partial class RepackTab
         // btnExtract
         // 
         btnExtract.Anchor = AnchorStyles.None;
-        btnExtract.Location = new Point(4, 78);
+        btnExtract.Location = new Point(4, 63);
         btnExtract.Name = "btnExtract";
-        btnExtract.Size = new Size(95, 32);
+        btnExtract.Size = new Size(90, 25);
         btnExtract.TabIndex = 6;
         btnExtract.Text = "Extract";
         btnExtract.UseVisualStyleBackColor = true;
@@ -118,9 +118,9 @@ partial class RepackTab
         // 
         btnOpenFolder.Anchor = AnchorStyles.None;
         btnOpenFolder.Enabled = false;
-        btnOpenFolder.Location = new Point(593, 82);
+        btnOpenFolder.Location = new Point(608, 63);
         btnOpenFolder.Name = "btnOpenFolder";
-        btnOpenFolder.Size = new Size(95, 32);
+        btnOpenFolder.Size = new Size(90, 25);
         btnOpenFolder.TabIndex = 7;
         btnOpenFolder.Text = "Open Folder";
         btnOpenFolder.UseVisualStyleBackColor = true;
@@ -129,20 +129,20 @@ partial class RepackTab
         // 
         btnCheck.Anchor = AnchorStyles.None;
         btnCheck.Enabled = false;
-        btnCheck.Location = new Point(292, 78);
+        btnCheck.Location = new Point(292, 63);
         btnCheck.Name = "btnCheck";
-        btnCheck.Size = new Size(105, 32);
+        btnCheck.Size = new Size(90, 25);
         btnCheck.TabIndex = 8;
-        btnCheck.Text = "Check Integrity";
+        btnCheck.Text = "Check";
         btnCheck.UseVisualStyleBackColor = true;
         // 
         // btnRepack
         // 
         btnRepack.Anchor = AnchorStyles.None;
         btnRepack.Enabled = false;
-        btnRepack.Location = new Point(105, 78);
+        btnRepack.Location = new Point(100, 63);
         btnRepack.Name = "btnRepack";
-        btnRepack.Size = new Size(85, 32);
+        btnRepack.Size = new Size(90, 25);
         btnRepack.TabIndex = 9;
         btnRepack.Text = "Repack";
         btnRepack.UseVisualStyleBackColor = true;
@@ -151,9 +151,9 @@ partial class RepackTab
         // 
         btnCleanFolder.Anchor = AnchorStyles.None;
         btnCleanFolder.Enabled = false;
-        btnCleanFolder.Location = new Point(694, 82);
+        btnCleanFolder.Location = new Point(704, 63);
         btnCleanFolder.Name = "btnCleanFolder";
-        btnCleanFolder.Size = new Size(100, 32);
+        btnCleanFolder.Size = new Size(90, 25);
         btnCleanFolder.TabIndex = 10;
         btnCleanFolder.Text = "Delete Folder";
         btnCleanFolder.UseVisualStyleBackColor = true;
@@ -162,9 +162,9 @@ partial class RepackTab
         // 
         btnCancel.Anchor = AnchorStyles.None;
         btnCancel.Enabled = false;
-        btnCancel.Location = new Point(196, 78);
+        btnCancel.Location = new Point(196, 63);
         btnCancel.Name = "btnCancel";
-        btnCancel.Size = new Size(90, 32);
+        btnCancel.Size = new Size(90, 25);
         btnCancel.TabIndex = 11;
         btnCancel.Text = "Cancel";
         btnCancel.UseVisualStyleBackColor = true;
@@ -172,7 +172,7 @@ partial class RepackTab
         // progressBar
         // 
         progressBar.Anchor = AnchorStyles.None;
-        progressBar.Location = new Point(4, 120);
+        progressBar.Location = new Point(4, 94);
         progressBar.Name = "progressBar";
         progressBar.Size = new Size(790, 22);
         progressBar.TabIndex = 12;
@@ -185,11 +185,11 @@ partial class RepackTab
         txtLog.Font = new Font("Consolas", 9F);
         txtLog.ForeColor = Color.Gainsboro;
         txtLog.HideSelection = false;
-        txtLog.Location = new Point(4, 152);
+        txtLog.Location = new Point(4, 122);
         txtLog.Name = "txtLog";
         txtLog.ReadOnly = true;
         txtLog.ScrollBars = RichTextBoxScrollBars.Vertical;
-        txtLog.Size = new Size(790, 330);
+        txtLog.Size = new Size(790, 360);
         txtLog.TabIndex = 13;
         txtLog.Text = "";
         // 

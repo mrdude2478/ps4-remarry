@@ -264,6 +264,49 @@ public partial class RepackTab : UserControl
         if (!ConfirmWorkFolderWipe(tools.WorkDir))
             return;
 
+        // If this is a patch (update), ask the user for the base game PKG.
+        // gengp4_patch.exe doesn't know about the base game, so we have to tell
+        // it via the GP4's app_path attribute.
+        string? baseGamePkg = null;
+        {
+            var sidecar = RepackExtractLog.TryRead(extract);
+            bool isPatch = sidecar?.Category?.Equals("gp", StringComparison.OrdinalIgnoreCase) == true;
+
+            if (isPatch)
+            {
+                var answer = MessageBox.Show(this,
+                    "This is an update (patch) PKG. To repack it correctly it must be " +
+                    "married to the base game.\n\n" +
+                    "Click Yes to select the base game PKG.",
+                    "Select base game",
+                    MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+
+                if (answer == DialogResult.Cancel) return;
+                if (answer == DialogResult.Yes)
+                {
+                    using var dlg = new OpenFileDialog
+                    {
+                        Title = "Select the base game PKG for this update",
+                        Filter = "PS4 PKG (*.pkg)|*.pkg|All files (*.*)|*.*",
+                        CheckFileExists = true,
+                    };
+                    if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                    baseGamePkg = dlg.FileName;
+                }
+                else
+                {
+                    // User chose No — proceed without app_path. Build will succeed
+                    // but the update won't be married to a game.
+                    var confirm = MessageBox.Show(this,
+                        "Without a base game reference, the built update may not install " +
+                        "correctly on the console.\n\nContinue anyway?",
+                        "No base game selected",
+                        MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                    if (confirm != DialogResult.Yes) return;
+                }
+            }
+        }
+
         StartOperation();
         progressBar.Value = 0;
         AppendLog("=== Repack ===");
@@ -276,7 +319,7 @@ public partial class RepackTab : UserControl
         try
         {
             var pipeline = new RepackPipeline(_runner, tools);
-            var opts = new RepackBuildOptions(extract, outputFolder, tools.WorkDir);
+            var opts = new RepackBuildOptions(extract, outputFolder, tools.WorkDir, baseGamePkg);
 
             var outPkg = await Task.Run(() => pipeline.RepackAsync(opts, progress, _cts!.Token), _cts!.Token);
 
@@ -362,11 +405,26 @@ public partial class RepackTab : UserControl
         var extract = txtExtractFolder.Text.Trim();
         if (!Directory.Exists(extract)) { Warn("Extract folder not found."); return; }
 
-        var answer = MessageBox.Show(this,
-            "Delete the extract folder and everything in it?\n\n" + extract,
+        // Gather the extra files that sit outside the extract folder. We only
+        // mention them in the confirmation prompt if they actually exist.
+        var orphans = RepackPipeline.GetOrphanedFiles(extract)
+            .Where(File.Exists)
+            .ToList();
+
+        var message = "Delete the extract folder and everything in it?\n\n" + extract;
+        if (orphans.Count > 0)
+        {
+            message += "\n\nThe following related files will also be removed:";
+            foreach (var f in orphans)
+                message += "\n  " + Path.GetFileName(f);
+        }
+
+        var answer = MessageBox.Show(this, message,
             "Delete extract folder", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
         if (answer != DialogResult.Yes) return;
 
+        // Delete the extract folder first. If this fails, leave the extras
+        // alone so the user can retry without confusion.
         try
         {
             Directory.Delete(extract, recursive: true);
@@ -375,6 +433,23 @@ public partial class RepackTab : UserControl
         catch (Exception ex)
         {
             Warn("Delete failed: " + ex.Message);
+            return;
+        }
+
+        // Now remove the orphans. Failures here are non-fatal — the extract
+        // folder is already gone, so the user's primary intent is served.
+        foreach (var f in orphans)
+        {
+            try
+            {
+                File.SetAttributes(f, FileAttributes.Normal);
+                File.Delete(f);
+                AppendLog($"Deleted: {f}");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"[warn] could not delete {Path.GetFileName(f)}: {ex.Message}");
+            }
         }
     }
 

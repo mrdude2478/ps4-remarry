@@ -54,8 +54,6 @@ partial class MainForm
     {
         tabControl = new TabControl();
         tabSingle = new TabPage();
-        tabFileList = new TabPage();
-        fileListTab = new FileListTab();
         lblGame = new Label();
         txtGame = new TextBox();
         btnBrowseGame = new Button();
@@ -82,6 +80,8 @@ partial class MainForm
         verifyTab = new VerifyTab();
         tabRepack = new TabPage();
         repackTab = new RepackTab();
+        tabFileList = new TabPage();
+        fileListTab = new FileListTab();
         statusStrip = new StatusStrip();
         statusLabel = new ToolStripStatusLabel();
         tabControl.SuspendLayout();
@@ -89,8 +89,8 @@ partial class MainForm
         tabBatch.SuspendLayout();
         tabVerify.SuspendLayout();
         tabRepack.SuspendLayout();
-        statusStrip.SuspendLayout();
         tabFileList.SuspendLayout();
+        statusStrip.SuspendLayout();
         SuspendLayout();
         // 
         // tabControl
@@ -99,6 +99,7 @@ partial class MainForm
         tabControl.Controls.Add(tabBatch);
         tabControl.Controls.Add(tabVerify);
         tabControl.Controls.Add(tabRepack);
+        tabControl.Controls.Add(tabFileList);
         tabControl.Dock = DockStyle.Fill;
         tabControl.Location = new Point(0, 0);
         tabControl.Name = "tabControl";
@@ -135,27 +136,6 @@ partial class MainForm
         tabSingle.TabIndex = 0;
         tabSingle.Text = "Single";
         tabSingle.UseVisualStyleBackColor = true;
-        
-        tabControl.Controls.Add(tabFileList);
-        // 
-        // tabFileList
-        // 
-        tabFileList.Controls.Add(fileListTab);
-        tabFileList.Location = new Point(4, 24);
-        tabFileList.Name = "tabFileList";
-        tabFileList.Padding = new Padding(3);
-        tabFileList.Size = new Size(736, 491);
-        tabFileList.TabIndex = 4;
-        tabFileList.Text = "File List";
-        tabFileList.UseVisualStyleBackColor = true;
-        // 
-        // fileListTab
-        // 
-        fileListTab.Dock = DockStyle.Fill;
-        fileListTab.Location = new Point(3, 3);
-        fileListTab.Name = "fileListTab";
-        fileListTab.Size = new Size(730, 485);
-        fileListTab.TabIndex = 0;
         // 
         // lblGame
         // 
@@ -363,7 +343,6 @@ partial class MainForm
         txtLog.ReadOnly = true;
         txtLog.Size = new Size(790, 293);
         txtLog.TabIndex = 18;
-        txtLog.WordWrap = true;
         // 
         // tabBatch
         // 
@@ -425,6 +404,25 @@ partial class MainForm
         repackTab.Size = new Size(797, 485);
         repackTab.TabIndex = 0;
         // 
+        // tabFileList
+        // 
+        tabFileList.Controls.Add(fileListTab);
+        tabFileList.Location = new Point(4, 24);
+        tabFileList.Name = "tabFileList";
+        tabFileList.Padding = new Padding(3);
+        tabFileList.Size = new Size(803, 491);
+        tabFileList.TabIndex = 4;
+        tabFileList.Text = "File List";
+        tabFileList.UseVisualStyleBackColor = true;
+        // 
+        // fileListTab
+        // 
+        fileListTab.Dock = DockStyle.Fill;
+        fileListTab.Location = new Point(3, 3);
+        fileListTab.Name = "fileListTab";
+        fileListTab.Size = new Size(797, 485);
+        fileListTab.TabIndex = 0;
+        // 
         // statusStrip
         // 
         statusStrip.Items.AddRange(new ToolStripItem[] { statusLabel });
@@ -455,10 +453,10 @@ partial class MainForm
         tabControl.ResumeLayout(false);
         tabSingle.ResumeLayout(false);
         tabSingle.PerformLayout();
-        tabFileList.ResumeLayout(false);
         tabBatch.ResumeLayout(false);
         tabVerify.ResumeLayout(false);
         tabRepack.ResumeLayout(false);
+        tabFileList.ResumeLayout(false);
         statusStrip.ResumeLayout(false);
         statusStrip.PerformLayout();
         ResumeLayout(false);

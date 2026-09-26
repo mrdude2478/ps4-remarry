@@ -60,17 +60,17 @@ partial class VerifyTab
         // 
         txtGame.AllowDrop = true;
         txtGame.Anchor = AnchorStyles.None;
-        txtGame.Location = new Point(92, 17);
+        txtGame.Location = new Point(90, 16);
         txtGame.Name = "txtGame";
-        txtGame.Size = new Size(598, 23);
+        txtGame.Size = new Size(608, 23);
         txtGame.TabIndex = 1;
         // 
         // btnBrowseGame
         // 
         btnBrowseGame.Anchor = AnchorStyles.None;
-        btnBrowseGame.Location = new Point(696, 16);
+        btnBrowseGame.Location = new Point(704, 15);
         btnBrowseGame.Name = "btnBrowseGame";
-        btnBrowseGame.Size = new Size(98, 25);
+        btnBrowseGame.Size = new Size(90, 25);
         btnBrowseGame.TabIndex = 2;
         btnBrowseGame.Text = "Browse...";
         btnBrowseGame.UseVisualStyleBackColor = true;
@@ -79,7 +79,7 @@ partial class VerifyTab
         // 
         lblUpdate.Anchor = AnchorStyles.None;
         lblUpdate.AutoSize = true;
-        lblUpdate.Location = new Point(3, 59);
+        lblUpdate.Location = new Point(3, 55);
         lblUpdate.Name = "lblUpdate";
         lblUpdate.Size = new Size(72, 15);
         lblUpdate.TabIndex = 3;
@@ -89,17 +89,17 @@ partial class VerifyTab
         // 
         txtUpdate.AllowDrop = true;
         txtUpdate.Anchor = AnchorStyles.None;
-        txtUpdate.Location = new Point(92, 51);
+        txtUpdate.Location = new Point(90, 47);
         txtUpdate.Name = "txtUpdate";
-        txtUpdate.Size = new Size(598, 23);
+        txtUpdate.Size = new Size(608, 23);
         txtUpdate.TabIndex = 4;
         // 
         // btnBrowseUpdate
         // 
         btnBrowseUpdate.Anchor = AnchorStyles.None;
-        btnBrowseUpdate.Location = new Point(696, 50);
+        btnBrowseUpdate.Location = new Point(704, 46);
         btnBrowseUpdate.Name = "btnBrowseUpdate";
-        btnBrowseUpdate.Size = new Size(98, 25);
+        btnBrowseUpdate.Size = new Size(90, 25);
         btnBrowseUpdate.TabIndex = 5;
         btnBrowseUpdate.Text = "Browse...";
         btnBrowseUpdate.UseVisualStyleBackColor = true;
@@ -107,19 +107,19 @@ partial class VerifyTab
         // btnCheck
         // 
         btnCheck.Anchor = AnchorStyles.None;
-        btnCheck.Location = new Point(92, 86);
+        btnCheck.Location = new Point(90, 76);
         btnCheck.Name = "btnCheck";
-        btnCheck.Size = new Size(131, 32);
+        btnCheck.Size = new Size(90, 25);
         btnCheck.TabIndex = 6;
-        btnCheck.Text = "Check Compatibility";
+        btnCheck.Text = "Check";
         btnCheck.UseVisualStyleBackColor = true;
         // 
         // btnClear
         // 
         btnClear.Anchor = AnchorStyles.None;
-        btnClear.Location = new Point(238, 86);
+        btnClear.Location = new Point(188, 76);
         btnClear.Name = "btnClear";
-        btnClear.Size = new Size(80, 32);
+        btnClear.Size = new Size(90, 25);
         btnClear.TabIndex = 7;
         btnClear.Text = "Clear";
         btnClear.UseVisualStyleBackColor = true;
@@ -129,7 +129,7 @@ partial class VerifyTab
         // 
         lblGameDigest.Anchor = AnchorStyles.None;
         lblGameDigest.AutoSize = true;
-        lblGameDigest.Location = new Point(3, 137);
+        lblGameDigest.Location = new Point(3, 111);
         lblGameDigest.Name = "lblGameDigest";
         lblGameDigest.Size = new Size(76, 15);
         lblGameDigest.TabIndex = 8;
@@ -139,7 +139,7 @@ partial class VerifyTab
         // 
         txtGameDigest.Anchor = AnchorStyles.None;
         txtGameDigest.Font = new Font("Consolas", 9F);
-        txtGameDigest.Location = new Point(92, 130);
+        txtGameDigest.Location = new Point(90, 109);
         txtGameDigest.Name = "txtGameDigest";
         txtGameDigest.ReadOnly = true;
         txtGameDigest.Size = new Size(702, 22);
@@ -149,7 +149,7 @@ partial class VerifyTab
         // 
         lblUpdateDigest.Anchor = AnchorStyles.None;
         lblUpdateDigest.AutoSize = true;
-        lblUpdateDigest.Location = new Point(3, 177);
+        lblUpdateDigest.Location = new Point(3, 139);
         lblUpdateDigest.Name = "lblUpdateDigest";
         lblUpdateDigest.Size = new Size(83, 15);
         lblUpdateDigest.TabIndex = 10;
@@ -159,7 +159,7 @@ partial class VerifyTab
         // 
         txtUpdateDigest.Anchor = AnchorStyles.None;
         txtUpdateDigest.Font = new Font("Consolas", 9F);
-        txtUpdateDigest.Location = new Point(92, 170);
+        txtUpdateDigest.Location = new Point(90, 137);
         txtUpdateDigest.Name = "txtUpdateDigest";
         txtUpdateDigest.ReadOnly = true;
         txtUpdateDigest.Size = new Size(702, 22);
@@ -170,9 +170,9 @@ partial class VerifyTab
         // 
         lblStatus.Anchor = AnchorStyles.None;
         lblStatus.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
-        lblStatus.Location = new Point(92, 199);
+        lblStatus.Location = new Point(3, 175);
         lblStatus.Name = "lblStatus";
-        lblStatus.Size = new Size(702, 32);
+        lblStatus.Size = new Size(789, 26);
         lblStatus.TabIndex = 12;
         lblStatus.Text = "Pick both files and click Check.";
         // 
@@ -182,11 +182,11 @@ partial class VerifyTab
         txtLog.BackColor = Color.Black;
         txtLog.Font = new Font("Consolas", 9F);
         txtLog.ForeColor = Color.Gainsboro;
-        txtLog.Location = new Point(3, 234);
+        txtLog.Location = new Point(3, 204);
         txtLog.Multiline = true;
         txtLog.Name = "txtLog";
         txtLog.ReadOnly = true;
-        txtLog.Size = new Size(791, 245);
+        txtLog.Size = new Size(789, 275);
         txtLog.TabIndex = 13;
         // 
         // VerifyTab
