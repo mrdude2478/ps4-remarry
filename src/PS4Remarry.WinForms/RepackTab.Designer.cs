@@ -74,7 +74,7 @@ partial class RepackTab
         btnBrowsePkg.TabIndex = 2;
         btnBrowsePkg.Text = "Browse...";
         btnBrowsePkg.UseVisualStyleBackColor = true;
-        btnBrowsePkg.Click += btnBrowsePkg_Click;
+  
         // 
         // lblExtract
         // 

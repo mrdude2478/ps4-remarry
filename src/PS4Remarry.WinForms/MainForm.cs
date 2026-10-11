@@ -73,8 +73,26 @@ public partial class MainForm : Form
             Description = "Choose the output folder for the remarried PKG",
             SelectedPath = Directory.Exists(txtOutput.Text) ? txtOutput.Text : AppContext.BaseDirectory
         };
-        if (dlg.ShowDialog(this) == DialogResult.OK)
-            txtOutput.Text = dlg.SelectedPath;
+        if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
+        var chosen = dlg.SelectedPath;
+
+        // SAFETY: refuse protected roots (Desktop itself, Documents, ...).
+        // Subfolders are fine.
+        if (SafePathGuard.IsProtectedRoot(chosen))
+        {
+            var suggestion = Path.Combine(chosen, "Remarry");
+            Warn(
+                "You chose a protected Windows folder:" + Environment.NewLine + Environment.NewLine +
+                chosen + Environment.NewLine + Environment.NewLine +
+                "This folder contains your personal files and cannot be used as " +
+                "an output location." + Environment.NewLine + Environment.NewLine +
+                "Please create a subfolder (for example, " + suggestion + ") " +
+                "and select that instead.");
+            return;
+        }
+
+        txtOutput.Text = chosen;
     }
 
     private async void btnRenameGame_Click(object? sender, EventArgs e)
@@ -222,6 +240,20 @@ public partial class MainForm : Form
         if (!File.Exists(update)) { Warn("Update PKG not found."); return; }
         if (string.IsNullOrWhiteSpace(output)) { Warn("Pick an output folder."); return; }
 
+        // SAFETY: refuse a protected root as output, even if typed by hand.
+        if (SafePathGuard.IsProtectedRoot(output))
+        {
+            var suggestion = Path.Combine(output, "Remarry");
+            Warn(
+                "The output folder is a protected Windows folder:" + Environment.NewLine + Environment.NewLine +
+                output + Environment.NewLine + Environment.NewLine +
+                "This folder contains your personal files and cannot be used as " +
+                "an output location." + Environment.NewLine + Environment.NewLine +
+                "Please create a subfolder (for example, " + suggestion + ") " +
+                "and use that instead.");
+            return;
+        }
+
         try { Directory.CreateDirectory(output); }
         catch (Exception ex) { Warn("Cannot create output folder: " + ex.Message); return; }
 
@@ -302,7 +334,6 @@ public partial class MainForm : Form
 
         var tools = ToolLocator.Default();
 
-        // SAFETY: if the work folder has content, ask before we wipe it.
         if (!ConfirmWorkFolderWipe(tools.WorkDir))
             return;
 
@@ -398,6 +429,18 @@ public partial class MainForm : Form
         if (!File.Exists(update)) { Warn("Update PKG not found."); return; }
         if (string.IsNullOrWhiteSpace(output)) { Warn("Pick an output folder."); return; }
 
+        // SAFETY: refuse a protected root as output.
+        if (SafePathGuard.IsProtectedRoot(output))
+        {
+            var suggestion = Path.Combine(output, "Merge");
+            Warn(
+                "The output folder is a protected Windows folder:" + Environment.NewLine + Environment.NewLine +
+                output + Environment.NewLine + Environment.NewLine +
+                "Please create a subfolder (for example, " + suggestion + ") " +
+                "and use that instead.");
+            return;
+        }
+
         if (string.Equals(Path.GetFullPath(game),
                           Path.GetFullPath(update),
                           StringComparison.OrdinalIgnoreCase))
@@ -408,7 +451,6 @@ public partial class MainForm : Form
 
         var tools = ToolLocator.Default();
 
-        // SAFETY: if the work folder has content, ask before we wipe it.
         if (!ConfirmWorkFolderWipe(tools.WorkDir))
             return;
 
@@ -948,10 +990,6 @@ public partial class MainForm : Form
         SetRenameButtonsEnabled(!busy);
     }
 
-    /// <summary>
-    /// Returns true if the work folder is safe to wipe (or if the user
-    /// confirms). Returns false to abort the operation.
-    /// </summary>
     private bool ConfirmWorkFolderWipe(string workDir)
     {
         try

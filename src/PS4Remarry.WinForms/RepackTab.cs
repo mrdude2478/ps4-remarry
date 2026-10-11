@@ -19,19 +19,19 @@ public partial class RepackTab : UserControl
     private void WireEvents()
     {
         txtSourcePkg.DragEnter += PkgBox_DragEnter;
-        txtSourcePkg.DragDrop += PkgBox_DragDrop;
+        txtSourcePkg.DragDrop  += PkgBox_DragDrop;
         txtSourcePkg.TextChanged += (_, _) => UpdateButtonStates();
 
         txtExtractFolder.TextChanged += (_, _) => UpdateButtonStates();
 
-        btnBrowsePkg.Click += (_, _) => BrowsePkg();
+        btnBrowsePkg.Click     += (_, _) => BrowsePkg();
         btnBrowseExtract.Click += (_, _) => BrowseExtractFolder();
-        btnExtract.Click += async (_, _) => await ExtractAsync();
-        btnOpenFolder.Click += (_, _) => OpenExtractFolder();
-        btnCheck.Click += (_, _) => RunIntegrityCheck();
-        btnRepack.Click += async (_, _) => await RepackAsync();
-        btnCleanFolder.Click += (_, _) => CleanExtractFolder();
-        btnCancel.Click += (_, _) => CancelCurrentOperation();
+        btnExtract.Click       += async (_, _) => await ExtractAsync();
+        btnOpenFolder.Click    += (_, _) => OpenExtractFolder();
+        btnCheck.Click         += (_, _) => RunIntegrityCheck();
+        btnRepack.Click        += async (_, _) => await RepackAsync();
+        btnCleanFolder.Click   += (_, _) => CleanExtractFolder();
+        btnCancel.Click        += (_, _) => CancelCurrentOperation();
     }
 
     private void BrowsePkg()
@@ -42,16 +42,15 @@ public partial class RepackTab : UserControl
             Filter = "PS4 PKG (*.pkg)|*.pkg|All files (*.*)|*.*",
             CheckFileExists = true,
         };
-        if (dlg.ShowDialog(this) == DialogResult.OK)
-        {
-            txtSourcePkg.Text = dlg.FileName;
+        if (dlg.ShowDialog(this) != DialogResult.OK) return;
 
-            if (string.IsNullOrWhiteSpace(txtExtractFolder.Text))
-            {
-                var stem = Path.GetFileNameWithoutExtension(dlg.FileName);
-                var dir = Path.GetDirectoryName(dlg.FileName) ?? AppContext.BaseDirectory;
-                txtExtractFolder.Text = Path.Combine(dir, stem + "_extracted");
-            }
+        txtSourcePkg.Text = dlg.FileName;
+
+        if (string.IsNullOrWhiteSpace(txtExtractFolder.Text))
+        {
+            var stem = Path.GetFileNameWithoutExtension(dlg.FileName);
+            var dir  = Path.GetDirectoryName(dlg.FileName) ?? AppContext.BaseDirectory;
+            txtExtractFolder.Text = Path.Combine(dir, stem + "_extracted");
         }
     }
 
@@ -66,8 +65,24 @@ public partial class RepackTab : UserControl
         else if (Directory.Exists(Path.GetDirectoryName(txtExtractFolder.Text)))
             dlg.SelectedPath = Path.GetDirectoryName(txtExtractFolder.Text)!;
 
-        if (dlg.ShowDialog(this) == DialogResult.OK)
-            txtExtractFolder.Text = dlg.SelectedPath;
+        if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
+        var chosen = dlg.SelectedPath;
+
+        // SAFETY: refuse protected roots (Desktop itself, Documents, ...).
+        if (SafePathGuard.IsProtectedRoot(chosen))
+        {
+            var suggestion = Path.Combine(chosen, "PS4Extract");
+            Warn(
+                "You chose a protected Windows folder:" + Environment.NewLine + Environment.NewLine +
+                chosen + Environment.NewLine + Environment.NewLine +
+                "This folder contains your personal files and cannot be used." + Environment.NewLine + Environment.NewLine +
+                "Please create a subfolder (for example, " + suggestion + ") " +
+                "and select that instead.");
+            return;
+        }
+
+        txtExtractFolder.Text = chosen;
     }
 
     private void PkgBox_DragEnter(object? sender, DragEventArgs e)
@@ -91,28 +106,42 @@ public partial class RepackTab : UserControl
         if (string.IsNullOrWhiteSpace(txtExtractFolder.Text))
         {
             var stem = Path.GetFileNameWithoutExtension(pkg);
-            var dir = Path.GetDirectoryName(pkg) ?? AppContext.BaseDirectory;
+            var dir  = Path.GetDirectoryName(pkg) ?? AppContext.BaseDirectory;
             txtExtractFolder.Text = Path.Combine(dir, stem + "_extracted");
         }
 
         AppendLog($"Loaded source: {pkg}");
     }
 
+    // ---------- Extract ----------
+
     private async Task ExtractAsync()
     {
         if (_isBusy) return;
 
-        var source = txtSourcePkg.Text.Trim();
+        var source  = txtSourcePkg.Text.Trim();
         var extract = txtExtractFolder.Text.Trim();
 
         if (!File.Exists(source)) { Warn("Source PKG not found."); return; }
         if (string.IsNullOrWhiteSpace(extract)) { Warn("Pick an extract folder."); return; }
 
+        // SAFETY: refuse a protected root as the extract target.
+        if (SafePathGuard.IsProtectedRoot(extract))
+        {
+            var suggestion = Path.Combine(extract, "PS4Extract");
+            Warn(
+                "The extract folder is a protected Windows folder:" + Environment.NewLine + Environment.NewLine +
+                extract + Environment.NewLine + Environment.NewLine +
+                "Please create a subfolder (for example, " + suggestion + ") " +
+                "and use that instead.");
+            return;
+        }
+
         if (Directory.Exists(extract) && Directory.EnumerateFileSystemEntries(extract).Any())
         {
             var answer = MessageBox.Show(this,
-                "The extract folder already exists and is not empty:\n\n" +
-                extract + "\n\n" +
+                "The extract folder already exists and is not empty:" + Environment.NewLine + Environment.NewLine +
+                extract + Environment.NewLine + Environment.NewLine +
                 "Delete its contents and extract anyway?",
                 "Folder not empty", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (answer != DialogResult.Yes) return;
@@ -163,6 +192,8 @@ public partial class RepackTab : UserControl
         }
     }
 
+    // ---------- Repack ----------
+
     private async Task RepackAsync()
     {
         if (_isBusy) return;
@@ -173,7 +204,7 @@ public partial class RepackTab : UserControl
         var paramSfo = Path.Combine(extract, "sce_sys", "param.sfo");
         if (!File.Exists(paramSfo))
         {
-            Warn("param.sfo is missing from the extract folder's sce_sys subfolder.\n\n" +
+            Warn("param.sfo is missing from the extract folder's sce_sys subfolder." + Environment.NewLine + Environment.NewLine +
                  "Nothing to repack.");
             return;
         }
@@ -186,10 +217,10 @@ public partial class RepackTab : UserControl
         {
             var prefix = item.Level switch
             {
-                IntegrityLevel.Ok => "[  ok  ]",
-                IntegrityLevel.Warn => "[ warn ]",
+                IntegrityLevel.Ok    => "[  ok  ]",
+                IntegrityLevel.Warn  => "[ warn ]",
                 IntegrityLevel.Error => "[ERROR ]",
-                _ => "[      ]",
+                _                    => "[      ]",
             };
             AppendLog($"{prefix} {item.Message}");
         }
@@ -203,9 +234,11 @@ public partial class RepackTab : UserControl
                 .Where(i => i.Level == IntegrityLevel.Error)
                 .Select(i => "  - " + i.Message);
 
-            var msg = "The extract folder has errors and may not produce a valid PKG:\n\n" +
-                      string.Join("\n", errorLines) +
-                      "\n\nFull report is in the log. Continue anyway?";
+            var msg = "The extract folder has errors and may not produce a valid PKG:" +
+                      Environment.NewLine + Environment.NewLine +
+                      string.Join(Environment.NewLine, errorLines) +
+                      Environment.NewLine + Environment.NewLine +
+                      "Full report is in the log. Continue anyway?";
 
             var answer = MessageBox.Show(this, msg,
                 "Integrity check failed",
@@ -238,8 +271,8 @@ public partial class RepackTab : UserControl
         if (keystoneNeeded && !keystonePresent)
         {
             var answer = MessageBox.Show(this,
-                "This is a base game but sce_sys\\keystone is MISSING.\n\n" +
-                "Repacking without a keystone will produce a PKG that installs\n" +
+                "This is a base game but sce_sys\\keystone is MISSING." + Environment.NewLine + Environment.NewLine +
+                "Repacking without a keystone will produce a PKG that installs" + Environment.NewLine +
                 "but cannot save. Are you sure you want to continue?",
                 "Keystone missing",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
@@ -257,55 +290,25 @@ public partial class RepackTab : UserControl
             SelectedPath = Directory.Exists(defaultOut) ? defaultOut : AppContext.BaseDirectory,
         };
         if (outDlg.ShowDialog(this) != DialogResult.OK) return;
+
         var outputFolder = outDlg.SelectedPath;
+
+        // SAFETY: refuse a protected root as output.
+        if (SafePathGuard.IsProtectedRoot(outputFolder))
+        {
+            var suggestion = Path.Combine(outputFolder, "Repack");
+            Warn(
+                "You chose a protected Windows folder:" + Environment.NewLine + Environment.NewLine +
+                outputFolder + Environment.NewLine + Environment.NewLine +
+                "Please create a subfolder (for example, " + suggestion + ") " +
+                "and select that instead.");
+            return;
+        }
 
         var tools = ToolLocator.Default();
 
         if (!ConfirmWorkFolderWipe(tools.WorkDir))
             return;
-
-        // If this is a patch (update), ask the user for the base game PKG.
-        // gengp4_patch.exe doesn't know about the base game, so we have to tell
-        // it via the GP4's app_path attribute.
-        string? baseGamePkg = null;
-        {
-            var sidecar = RepackExtractLog.TryRead(extract);
-            bool isPatch = sidecar?.Category?.Equals("gp", StringComparison.OrdinalIgnoreCase) == true;
-
-            if (isPatch)
-            {
-                var answer = MessageBox.Show(this,
-                    "This is an update (patch) PKG. To repack it correctly it must be " +
-                    "married to the base game.\n\n" +
-                    "Click Yes to select the base game PKG.",
-                    "Select base game",
-                    MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
-
-                if (answer == DialogResult.Cancel) return;
-                if (answer == DialogResult.Yes)
-                {
-                    using var dlg = new OpenFileDialog
-                    {
-                        Title = "Select the base game PKG for this update",
-                        Filter = "PS4 PKG (*.pkg)|*.pkg|All files (*.*)|*.*",
-                        CheckFileExists = true,
-                    };
-                    if (dlg.ShowDialog(this) != DialogResult.OK) return;
-                    baseGamePkg = dlg.FileName;
-                }
-                else
-                {
-                    // User chose No — proceed without app_path. Build will succeed
-                    // but the update won't be married to a game.
-                    var confirm = MessageBox.Show(this,
-                        "Without a base game reference, the built update may not install " +
-                        "correctly on the console.\n\nContinue anyway?",
-                        "No base game selected",
-                        MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-                    if (confirm != DialogResult.Yes) return;
-                }
-            }
-        }
 
         StartOperation();
         progressBar.Value = 0;
@@ -319,7 +322,7 @@ public partial class RepackTab : UserControl
         try
         {
             var pipeline = new RepackPipeline(_runner, tools);
-            var opts = new RepackBuildOptions(extract, outputFolder, tools.WorkDir, baseGamePkg);
+            var opts = new RepackBuildOptions(extract, outputFolder, tools.WorkDir);
 
             var outPkg = await Task.Run(() => pipeline.RepackAsync(opts, progress, _cts!.Token), _cts!.Token);
 
@@ -327,7 +330,8 @@ public partial class RepackTab : UserControl
             AppendLog($"Repacked: {outPkg}");
 
             MessageBox.Show(this,
-                "Repack complete.\n\nOutput:\n" + outPkg,
+                "Repack complete." + Environment.NewLine + Environment.NewLine +
+                "Output:" + Environment.NewLine + outPkg,
                 "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (OperationCanceledException)
@@ -348,6 +352,8 @@ public partial class RepackTab : UserControl
         }
     }
 
+    // ---------- Integrity check ----------
+
     private void RunIntegrityCheck()
     {
         var extract = txtExtractFolder.Text.Trim();
@@ -364,10 +370,10 @@ public partial class RepackTab : UserControl
         {
             var prefix = item.Level switch
             {
-                IntegrityLevel.Ok => "[  ok  ]",
-                IntegrityLevel.Warn => "[ warn ]",
+                IntegrityLevel.Ok    => "[  ok  ]",
+                IntegrityLevel.Warn  => "[ warn ]",
                 IntegrityLevel.Error => "[ERROR ]",
-                _ => "[      ]",
+                _                    => "[      ]",
             };
             AppendLog($"{prefix} {item.Message}");
         }
@@ -391,13 +397,14 @@ public partial class RepackTab : UserControl
         AppendLog("=======================");
     }
 
+    // ---------- Folder management ----------
+
     private void OpenExtractFolder()
     {
         var extract = txtExtractFolder.Text.Trim();
         if (!Directory.Exists(extract)) { Warn("Extract folder not found."); return; }
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
-            "explorer.exe", $"\"{extract}\"")
-        { UseShellExecute = true });
+            "explorer.exe", $"\"{extract}\"") { UseShellExecute = true });
     }
 
     private void CleanExtractFolder()
@@ -411,12 +418,15 @@ public partial class RepackTab : UserControl
             .Where(File.Exists)
             .ToList();
 
-        var message = "Delete the extract folder and everything in it?\n\n" + extract;
+        var message = "Delete the extract folder and everything in it?" +
+                      Environment.NewLine + Environment.NewLine + extract;
+
         if (orphans.Count > 0)
         {
-            message += "\n\nThe following related files will also be removed:";
+            message += Environment.NewLine + Environment.NewLine +
+                       "The following related files will also be removed:";
             foreach (var f in orphans)
-                message += "\n  " + Path.GetFileName(f);
+                message += Environment.NewLine + "  " + Path.GetFileName(f);
         }
 
         var answer = MessageBox.Show(this, message,
@@ -436,8 +446,7 @@ public partial class RepackTab : UserControl
             return;
         }
 
-        // Now remove the orphans. Failures here are non-fatal — the extract
-        // folder is already gone, so the user's primary intent is served.
+        // Now remove the orphans. Failures here are non-fatal.
         foreach (var f in orphans)
         {
             try
@@ -453,20 +462,22 @@ public partial class RepackTab : UserControl
         }
     }
 
+    // ---------- Operation state ----------
+
     private void StartOperation()
     {
         _isBusy = true;
         _cts = new CancellationTokenSource();
         _lastLoggedLine = null;
 
-        btnBrowsePkg.Enabled = false;
+        btnBrowsePkg.Enabled     = false;
         btnBrowseExtract.Enabled = false;
-        btnExtract.Enabled = false;
-        btnOpenFolder.Enabled = false;
-        btnCheck.Enabled = false;
-        btnRepack.Enabled = false;
-        btnCleanFolder.Enabled = false;
-        btnCancel.Enabled = true;
+        btnExtract.Enabled       = false;
+        btnOpenFolder.Enabled    = false;
+        btnCheck.Enabled         = false;
+        btnRepack.Enabled        = false;
+        btnCleanFolder.Enabled   = false;
+        btnCancel.Enabled        = true;
     }
 
     private void EndOperation()
@@ -474,9 +485,9 @@ public partial class RepackTab : UserControl
         _isBusy = false;
         if (_cts is not null) { _cts.Dispose(); _cts = null; }
 
-        btnBrowsePkg.Enabled = true;
+        btnBrowsePkg.Enabled     = true;
         btnBrowseExtract.Enabled = true;
-        btnCancel.Enabled = false;
+        btnCancel.Enabled        = false;
         UpdateButtonStates();
     }
 
@@ -494,16 +505,16 @@ public partial class RepackTab : UserControl
     {
         if (_isBusy) return;
 
-        bool hasSource = File.Exists(txtSourcePkg.Text.Trim());
-        bool hasExtract = !string.IsNullOrWhiteSpace(txtExtractFolder.Text.Trim());
-        bool extractExists = hasExtract && Directory.Exists(txtExtractFolder.Text.Trim());
+        bool hasSource       = File.Exists(txtSourcePkg.Text.Trim());
+        bool hasExtract      = !string.IsNullOrWhiteSpace(txtExtractFolder.Text.Trim());
+        bool extractExists   = hasExtract && Directory.Exists(txtExtractFolder.Text.Trim());
         bool extractHasParam = extractExists &&
             File.Exists(Path.Combine(txtExtractFolder.Text.Trim(), "sce_sys", "param.sfo"));
 
-        btnExtract.Enabled = hasSource && hasExtract;
-        btnOpenFolder.Enabled = extractExists;
-        btnCheck.Enabled = extractExists;
-        btnRepack.Enabled = extractHasParam;
+        btnExtract.Enabled     = hasSource && hasExtract;
+        btnOpenFolder.Enabled  = extractExists;
+        btnCheck.Enabled       = extractExists;
+        btnRepack.Enabled      = extractHasParam;
         btnCleanFolder.Enabled = extractExists;
     }
 
@@ -517,9 +528,9 @@ public partial class RepackTab : UserControl
             if (files == 0 && dirs == 0) return true;
 
             var answer = MessageBox.Show(this,
-                "The tool's work folder currently contains data:\n\n" +
-                workDir + "\n\n" +
-                $"{files} file(s), {dirs} folder(s), {Formatting.FormatBytes(bytes)} total.\n\n" +
+                "The tool's work folder currently contains data:" + Environment.NewLine + Environment.NewLine +
+                workDir + Environment.NewLine + Environment.NewLine +
+                $"{files} file(s), {dirs} folder(s), {Formatting.FormatBytes(bytes)} total." + Environment.NewLine + Environment.NewLine +
                 "This will be deleted before the next operation runs. Continue?",
                 "Work folder will be cleared",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
@@ -575,9 +586,4 @@ public partial class RepackTab : UserControl
     private void Warn(string msg) =>
         MessageBox.Show(this, msg, "Repack",
             MessageBoxButtons.OK, MessageBoxIcon.Warning);
-
-    private void btnBrowsePkg_Click(object sender, EventArgs e)
-    {
-
-    }
 }

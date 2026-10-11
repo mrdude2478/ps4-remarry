@@ -13,6 +13,9 @@ partial class MainForm
     private System.Windows.Forms.TabPage    tabRepack;
     private PS4Remarry.WinForms.RepackTab   repackTab;
     
+    private System.Windows.Forms.TabPage    tabDlc;
+    private PS4Remarry.WinForms.DlcTab      dlcTab;
+    
     private System.Windows.Forms.TabPage    tabFileList;
     private PS4Remarry.WinForms.FileListTab fileListTab;
 
@@ -56,6 +59,8 @@ partial class MainForm
         tabSingle = new TabPage();
         lblGame = new Label();
         txtGame = new TextBox();
+        tabDlc = new TabPage();
+        dlcTab = new DlcTab();
         btnBrowseGame = new Button();
         btnRenameGame = new Button();
         lblUpdate = new Label();
@@ -90,6 +95,7 @@ partial class MainForm
         tabVerify.SuspendLayout();
         tabRepack.SuspendLayout();
         tabFileList.SuspendLayout();
+        tabDlc.SuspendLayout();
         statusStrip.SuspendLayout();
         SuspendLayout();
         // 
@@ -99,6 +105,7 @@ partial class MainForm
         tabControl.Controls.Add(tabBatch);
         tabControl.Controls.Add(tabVerify);
         tabControl.Controls.Add(tabRepack);
+        tabControl.Controls.Add(tabDlc);
         tabControl.Controls.Add(tabFileList);
         tabControl.Dock = DockStyle.Fill;
         tabControl.Location = new Point(0, 0);
@@ -423,6 +430,26 @@ partial class MainForm
         fileListTab.Size = new Size(797, 485);
         fileListTab.TabIndex = 0;
         // 
+// tabDlc
+// 
+tabDlc.Controls.Add(dlcTab);
+tabDlc.Location = new Point(4, 24);
+tabDlc.Name = "tabDlc";
+tabDlc.Padding = new Padding(3);
+tabDlc.Size = new Size(736, 491);
+tabDlc.TabIndex = 5;
+tabDlc.Text = "DLC";
+tabDlc.UseVisualStyleBackColor = true;
+
+// 
+// dlcTab
+// 
+dlcTab.Dock = DockStyle.Fill;
+dlcTab.Location = new Point(3, 3);
+dlcTab.Name = "dlcTab";
+dlcTab.Size = new Size(730, 485);
+dlcTab.TabIndex = 0;
+        // 
         // statusStrip
         // 
         statusStrip.Items.AddRange(new ToolStripItem[] { statusLabel });
@@ -457,6 +484,7 @@ partial class MainForm
         tabVerify.ResumeLayout(false);
         tabRepack.ResumeLayout(false);
         tabFileList.ResumeLayout(false);
+        tabDlc.ResumeLayout(false);
         statusStrip.ResumeLayout(false);
         statusStrip.PerformLayout();
         ResumeLayout(false);

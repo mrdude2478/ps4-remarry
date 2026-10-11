@@ -5,6 +5,9 @@
     <Compile Update="BatchTab.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Update="DlcTab.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Update="FileListTab.cs">
       <SubType>UserControl</SubType>
     </Compile>

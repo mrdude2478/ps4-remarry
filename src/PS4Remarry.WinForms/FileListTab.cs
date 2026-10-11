@@ -13,11 +13,8 @@ public partial class FileListTab : UserControl
     private PkgFileListReader.TreeNode? _root;
     private string? _loadedPkgPath;
 
-    // Accumulates every line of img_file_list output in memory. The txtLog
-    // box gets a throttled view of this so the UI stays responsive.
     private readonly StringBuilder _logBuffer = new();
 
-    // Throttling for the log box: only push to the UI every 200 ms.
     private System.Windows.Forms.Timer? _logFlushTimer;
     private bool _logDirty;
 
@@ -42,18 +39,17 @@ public partial class FileListTab : UserControl
     {
         txtSourcePkg.AllowDrop = true;
         txtSourcePkg.DragEnter += PkgBox_DragEnter;
-        txtSourcePkg.DragDrop += PkgBox_DragDrop;
+        txtSourcePkg.DragDrop  += PkgBox_DragDrop;
         txtSourcePkg.TextChanged += (_, _) => UpdateButtonStates();
 
-        btnBrowsePkg.Click += (_, _) => BrowsePkg();
-        btnLoad.Click += async (_, _) => await LoadFileListAsync();
+        btnBrowsePkg.Click       += (_, _) => BrowsePkg();
+        btnLoad.Click            += async (_, _) => await LoadFileListAsync();
         btnExtractSelected.Click += async (_, _) => await ExtractSelectedAsync();
-        btnCancel.Click += (_, _) => CancelCurrentOperation();
+        btnExtractAll.Click      += async (_, _) => await ExtractAllAsync();
+        btnCancel.Click          += (_, _) => CancelCurrentOperation();
 
         treeFiles.BeforeExpand += TreeFiles_BeforeExpand;
-        treeFiles.AfterSelect += TreeFiles_AfterSelect;
-
-        btnExtractAll.Click += async (_, _) => await ExtractAllAsync();
+        treeFiles.AfterSelect  += TreeFiles_AfterSelect;
     }
 
     // ---------- Browsing / drag/drop ----------
@@ -70,7 +66,7 @@ public partial class FileListTab : UserControl
         {
             txtSourcePkg.Text = dlg.FileName;
             ClearTree();
-            _lastInfoDumpedFor = null;   // allow re-dump for this new file
+            _lastInfoDumpedFor = null;
             _ = DumpPkgInfoAsync(dlg.FileName);
         }
     }
@@ -108,7 +104,6 @@ public partial class FileListTab : UserControl
 
         StartOperation();
 
-        // Clear both the visible log and the buffer.
         _logBuffer.Clear();
         txtLog.Clear();
         ClearTree();
@@ -126,7 +121,6 @@ public partial class FileListTab : UserControl
         {
             var tools = ToolLocator.Default();
 
-            // Phase 1 — run the process, accumulate lines in _logBuffer.
             var (ok, err) = await PkgFileListReader.RunImgFileListAsync(
                 source, tools, _runner, _logBuffer, progress, _cts!.Token);
 
@@ -146,7 +140,6 @@ public partial class FileListTab : UserControl
 
             progressBar.Value = 50;
 
-            // Phase 2 — parse the accumulated lines.
             var lines = SplitBufferIntoLines(_logBuffer);
             var result = PkgFileListReader.ParseFromLines(lines);
 
@@ -165,8 +158,7 @@ public partial class FileListTab : UserControl
 
             PopulateTreeTopLevel(result.Root);
 
-            lblSummary.Text =
-                $"{result.FileCount:N0} files, {Formatting.FormatBytes(result.TotalBytes)} total.";
+            lblSummary.Text = $"{result.FileCount:N0} files.";
             statusLog($"Loaded {result.FileCount:N0} files.");
 
             progressBar.Value = 100;
@@ -241,8 +233,6 @@ public partial class FileListTab : UserControl
 
     private static IEnumerable<string> SplitBufferIntoLines(StringBuilder buffer)
     {
-        // Split on \n and trim trailing \r so both Windows and Unix line
-        // endings parse the same way.
         var text = buffer.ToString();
         return text.Split('\n').Select(l => l.TrimEnd('\r'));
     }
@@ -272,7 +262,20 @@ public partial class FileListTab : UserControl
                 : AppContext.BaseDirectory,
         };
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
         var outputRoot = dlg.SelectedPath;
+
+        // SAFETY: refuse a protected root as output.
+        if (SafePathGuard.IsProtectedRoot(outputRoot))
+        {
+            var suggestion = Path.Combine(outputRoot, "PS4Extract");
+            Warn(
+                "You chose a protected Windows folder:" + Environment.NewLine + Environment.NewLine +
+                outputRoot + Environment.NewLine + Environment.NewLine +
+                "Please create a subfolder (for example, " + suggestion + ") " +
+                "and select that instead.");
+            return;
+        }
 
         StartOperation();
         progressBar.Value = 0;
@@ -280,7 +283,6 @@ public partial class FileListTab : UserControl
         AppendLogToBuffer("");
         AppendLogToBuffer("=== Extract single file ===");
         AppendLogToBuffer($"File:   {node.FullPath}");
-        AppendLogToBuffer($"Size:   {Formatting.FormatBytes(node.Size)}");
         AppendLogToBuffer($"Output: {outputRoot}");
         AppendLogToBuffer("---------------------------");
         FlushLogIfDirty();
@@ -309,7 +311,8 @@ public partial class FileListTab : UserControl
             statusLog("Extract complete.");
 
             MessageBox.Show(this,
-                "File extracted to:\n\n" + result.ExtractedPath,
+                "File extracted to:" + Environment.NewLine + Environment.NewLine +
+                result.ExtractedPath,
                 "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (OperationCanceledException)
@@ -330,6 +333,33 @@ public partial class FileListTab : UserControl
         }
     }
 
+    private bool ConfirmWorkFolderWipe(string workDir)
+    {
+        try
+        {
+            if (!Directory.Exists(workDir)) return true;
+
+            var (files, dirs, bytes) = SafePathGuard.MeasureDirectory(workDir);
+            if (files == 0 && dirs == 0) return true;
+
+            var answer = MessageBox.Show(this,
+                "The tool's work folder currently contains data:" + Environment.NewLine + Environment.NewLine +
+                workDir + Environment.NewLine + Environment.NewLine +
+                $"{files} file(s), {dirs} folder(s), {Formatting.FormatBytes(bytes)} total." + Environment.NewLine + Environment.NewLine +
+                "This will be deleted before the next operation runs. Continue?",
+                "Work folder will be cleared",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+            return answer == DialogResult.Yes;
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
+    // ---------- Extract all ----------
+
     private async Task ExtractAllAsync()
     {
         if (_isBusy) return;
@@ -337,7 +367,6 @@ public partial class FileListTab : UserControl
         var source = txtSourcePkg.Text.Trim();
         if (!File.Exists(source)) { Warn("Source PKG not found."); return; }
 
-        // Default output folder: same directory as the source PKG, named after it.
         var sourceDir = Path.GetDirectoryName(source) ?? AppContext.BaseDirectory;
         var suggestedName = Path.GetFileNameWithoutExtension(source) + "_extracted";
         var suggestedPath = Path.Combine(sourceDir, suggestedName);
@@ -349,16 +378,27 @@ public partial class FileListTab : UserControl
             SelectedPath = Directory.Exists(suggestedPath) ? suggestedPath : sourceDir,
         };
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
         var outputRoot = dlg.SelectedPath;
 
-        // Refuse to extract into a folder that already has content, unless the
-        // user agrees to delete it. RepackPipeline.ExtractAsync requires an
-        // empty or non-existent target folder.
+        // SAFETY: refuse a protected root as output.
+        if (SafePathGuard.IsProtectedRoot(outputRoot))
+        {
+            var suggestion = Path.Combine(outputRoot, "PS4Extract");
+            Warn(
+                "You chose a protected Windows folder:" + Environment.NewLine + Environment.NewLine +
+                outputRoot + Environment.NewLine + Environment.NewLine +
+                "Please create a subfolder (for example, " + suggestion + ") " +
+                "and select that instead.");
+            return;
+        }
+
         if (Directory.Exists(outputRoot) &&
             Directory.EnumerateFileSystemEntries(outputRoot).Any())
         {
             var answer = MessageBox.Show(this,
-                "The chosen folder is not empty:\n\n" + outputRoot + "\n\n" +
+                "The chosen folder is not empty:" + Environment.NewLine + Environment.NewLine +
+                outputRoot + Environment.NewLine + Environment.NewLine +
                 "Delete its contents and extract anyway?",
                 "Folder not empty", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (answer != DialogResult.Yes) return;
@@ -369,7 +409,6 @@ public partial class FileListTab : UserControl
 
         var tools = ToolLocator.Default();
 
-        // Same safety check as the Repack tab.
         if (!ConfirmWorkFolderWipe(tools.WorkDir))
             return;
 
@@ -402,15 +441,15 @@ public partial class FileListTab : UserControl
             statusLog("Extract all complete.");
 
             var answer = MessageBox.Show(this,
-                "Extract all complete.\n\nOutput:\n" + outputRoot + "\n\n" +
+                "Extract all complete." + Environment.NewLine + Environment.NewLine +
+                "Output:" + Environment.NewLine + outputRoot + Environment.NewLine + Environment.NewLine +
                 "Open the folder in Explorer?",
                 "Success", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
 
             if (answer == DialogResult.Yes)
             {
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
-                    "explorer.exe", $"\"{outputRoot}\"")
-                { UseShellExecute = true });
+                    "explorer.exe", $"\"{outputRoot}\"") { UseShellExecute = true });
             }
         }
         catch (OperationCanceledException)
@@ -428,31 +467,6 @@ public partial class FileListTab : UserControl
         finally
         {
             EndOperation();
-        }
-    }
-
-    private bool ConfirmWorkFolderWipe(string workDir)
-    {
-        try
-        {
-            if (!Directory.Exists(workDir)) return true;
-
-            var (files, dirs, bytes) = SafePathGuard.MeasureDirectory(workDir);
-            if (files == 0 && dirs == 0) return true;
-
-            var answer = MessageBox.Show(this,
-                "The tool's work folder currently contains data:\n\n" +
-                workDir + "\n\n" +
-                $"{files} file(s), {dirs} folder(s), {Formatting.FormatBytes(bytes)} total.\n\n" +
-                "This will be deleted before the next operation runs. Continue?",
-                "Work folder will be cleared",
-                MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-
-            return answer == DialogResult.Yes;
-        }
-        catch
-        {
-            return true;
         }
     }
 
@@ -499,9 +513,7 @@ public partial class FileListTab : UserControl
         var node = new TreeNode(model.Name)
         {
             Tag = model,
-            ToolTipText = model.IsFolder
-                ? $"{model.FullPath}  ({Formatting.FormatBytes(model.Size)})"
-                : $"{model.FullPath}  ({Formatting.FormatBytes(model.Size)})",
+            ToolTipText = $"{model.FullPath}",
         };
 
         if (model.IsFolder)
@@ -546,22 +558,22 @@ public partial class FileListTab : UserControl
         var ext = Path.GetExtension(name).ToLowerInvariant();
         return ext switch
         {
-            ".pkg" => "PKG package",
-            ".sfo" => "System metadata",
-            ".png" => "Image (PNG)",
-            ".dds" => "Image (DDS)",
-            ".at9" => "Audio (AT9)",
-            ".mp4" => "Video (MP4)",
-            ".prx" => "PS4 module",
-            ".bin" => "Binary data",
-            ".ipak" => "Asset pack",
+            ".pkg"      => "PKG package",
+            ".sfo"      => "System metadata",
+            ".png"      => "Image (PNG)",
+            ".dds"      => "Image (DDS)",
+            ".at9"      => "Audio (AT9)",
+            ".mp4"      => "Video (MP4)",
+            ".prx"      => "PS4 module",
+            ".bin"      => "Binary data",
+            ".ipak"     => "Asset pack",
             ".manifest" => "Manifest",
-            ".dat" => "Data file",
-            ".lua" => "Lua script",
-            ".xml" => "XML data",
-            ".json" => "JSON data",
-            ".trp" => "Trophy data",
-            _ => "File"
+            ".dat"      => "Data file",
+            ".lua"      => "Lua script",
+            ".xml"      => "XML data",
+            ".json"     => "JSON data",
+            ".trp"      => "Trophy data",
+            _           => "File"
         };
     }
 
@@ -573,12 +585,12 @@ public partial class FileListTab : UserControl
         _cts = new CancellationTokenSource();
         _lastLoggedLine = null;
 
-        btnBrowsePkg.Enabled = false;
-        btnLoad.Enabled = false;
+        btnBrowsePkg.Enabled       = false;
+        btnLoad.Enabled            = false;
         btnExtractSelected.Enabled = false;
-        btnCancel.Enabled = true;
-        btnExtractAll.Enabled = false;
-        txtSourcePkg.Enabled = false;
+        btnExtractAll.Enabled      = false;
+        btnCancel.Enabled          = true;
+        txtSourcePkg.Enabled       = false;
     }
 
     private void EndOperation()
@@ -587,8 +599,8 @@ public partial class FileListTab : UserControl
         if (_cts is not null) { _cts.Dispose(); _cts = null; }
 
         btnBrowsePkg.Enabled = true;
-        btnLoad.Enabled = true;
-        btnCancel.Enabled = false;
+        btnLoad.Enabled      = true;
+        btnCancel.Enabled    = false;
         txtSourcePkg.Enabled = true;
         UpdateButtonStates();
 
@@ -625,13 +637,9 @@ public partial class FileListTab : UserControl
         if (txtLog.IsDisposed) return;
         _logDirty = false;
 
-        // Push the entire buffer to the text box. For large buffers this is
-        // cheaper than appending line by line, and it runs at most 5×/s.
         var text = _logBuffer.ToString();
         if (txtLog.TextLength == text.Length) return;
 
-        // Preserve scroll-at-bottom behaviour: only autoscroll if the user
-        // hasn't scrolled up.
         bool wasAtEnd = txtLog.SelectionStart >= txtLog.TextLength - 1;
 
         txtLog.Text = text;

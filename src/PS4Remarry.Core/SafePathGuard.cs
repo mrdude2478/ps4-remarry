@@ -4,9 +4,17 @@ namespace PS4Remarry.Core;
 /// Central safety checks for destructive filesystem operations. Every call
 /// to FileSystemUtil.WipeDirectory() goes through here first.
 ///
-/// The guard exists because the pipelines derive their work directory from
-/// user-supplied paths, and a mistake in that derivation — or a user typing
-/// the wrong path — could otherwise wipe a real folder like the Desktop.
+/// Three distinct concepts:
+///
+///   * Protected root: a well-known user folder (Desktop, Documents, ...)
+///     or a drive root. Wiping one destroys user data, so we refuse.
+///
+///   * Protected descendant: a path that lives inside a protected root.
+///     Some of those are legitimate work areas (tools\Work under a project
+///     on the Desktop), others aren't. Callers decide which is allowed.
+///
+///   * Safe work root: the tools\Work subtree, which is the only place
+///     any pipeline is allowed to recursively delete.
 /// </summary>
 public static class SafePathGuard
 {
@@ -16,14 +24,18 @@ public static class SafePathGuard
         public string Reason { get; }
 
         public UnsafePathException(string attemptedPath, string reason)
-            : base($"Refusing to delete '{attemptedPath}': {reason}")
+            : base($"Refusing to operate on '{attemptedPath}': {reason}")
         {
             AttemptedPath = attemptedPath;
             Reason = reason;
         }
     }
 
-    private static IEnumerable<string> GetProtectedPaths()
+    // ---------------------------------------------------------------
+    // Protected path enumeration
+    // ---------------------------------------------------------------
+
+    private static IEnumerable<string> GetProtectedPathsRaw()
     {
         yield return Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
         yield return Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
@@ -42,22 +54,24 @@ public static class SafePathGuard
             yield return Path.Combine(userProfile, "Pictures");
             yield return Path.Combine(userProfile, "Music");
             yield return Path.Combine(userProfile, "Videos");
+            yield return Path.Combine(userProfile, "OneDrive");
         }
 
         var publicProfile = Environment.GetEnvironmentVariable("PUBLIC");
         if (!string.IsNullOrEmpty(publicProfile))
             yield return Path.Combine(publicProfile, "Desktop");
+
+        // Drive roots.
+        foreach (var drive in DriveInfo.GetDrives())
+        {
+            if (drive.IsReady)
+                yield return drive.RootDirectory.FullName;
+        }
     }
 
-    /// <summary>
-    /// Normalises the protected-path list once per call. Doing this lazily
-    /// (rather than caching) means the guard stays correct if the user
-    /// changes their environment during a session, and it avoids any risk of
-    /// stale values in a long-running process.
-    /// </summary>
     private static List<string> NormalisedProtectedPaths()
     {
-        return GetProtectedPaths()
+        return GetProtectedPathsRaw()
             .Where(p => !string.IsNullOrWhiteSpace(p))
             .Select(p =>
             {
@@ -73,65 +87,61 @@ public static class SafePathGuard
             .ToList();
     }
 
-    /// <summary>
-    /// Throws if the path is not safe to wipe. Performs the following checks:
-    ///   - Path must exist and be an absolute path.
-    ///   - Path must not be a drive root (C:\, D:\, ...).
-    ///   - Path must not be on the protected-folder deny list.
-    ///   - Path must not be an ancestor of a protected folder.
-    /// </summary>
-    public static void AssertSafeToWipe(string path)
+    private static string Normalise(string path)
     {
-        if (string.IsNullOrWhiteSpace(path))
-            throw new UnsafePathException(path ?? "", "path is empty");
-
-        string full;
-        try { full = Path.GetFullPath(path); }
-        catch (Exception ex)
+        try
         {
-            throw new UnsafePathException(path, "path is not valid: " + ex.Message);
+            return Path.GetFullPath(path)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         }
-
-        full = full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-
-        if (IsDriveRoot(full))
-            throw new UnsafePathException(full, "path is a drive root");
-
-        if (full.Length <= 3)
-            throw new UnsafePathException(full, "path is too short to be a safe target");
-
-        foreach (var prot in NormalisedProtectedPaths())
+        catch
         {
-            if (string.Equals(full, prot, StringComparison.OrdinalIgnoreCase))
-                throw new UnsafePathException(full,
-                    $"path is a protected Windows folder ({prot})");
-
-            if (prot.StartsWith(full + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                throw new UnsafePathException(full,
-                    $"path is an ancestor of a protected folder ({prot})");
+            return path ?? "";
         }
     }
 
+    // ---------------------------------------------------------------
+    // Public checks
+    // ---------------------------------------------------------------
+
     /// <summary>
-    /// Throws if the given path is, or is inside, a protected Windows folder.
-    /// Used to validate that the tools directory isn't mistakenly pointing at
-    /// the Desktop, Documents, etc.
-    ///
-    /// This closes a gap that AssertSafeToWipe does not: wiping
-    /// C:\Users\Alan\Desktop\Work is not blocked by AssertSafeToWipe, because
-    /// that path is neither protected nor an ancestor of a protected folder.
-    /// But if tools\Work ever resolved to that, we'd still be wiping a
-    /// subfolder of the Desktop. AssertNotProtected catches that.
+    /// True if the given path is exactly one of the well-known user
+    /// folders (Desktop, Documents, Downloads, ...) or a drive root.
+    /// Subfolders of those return false.
+    /// </summary>
+    public static bool IsProtectedRoot(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+        var full = Normalise(path);
+        return NormalisedProtectedPaths()
+            .Any(p => string.Equals(p, full, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Throws if the path is a protected root. Used wherever we accept a
+    /// user-chosen folder (output, work, etc.) and want to refuse the
+    /// handful of folders that must never be used directly.
+    /// </summary>
+    public static void AssertNotProtectedRoot(string path, string label)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+
+        if (IsProtectedRoot(path))
+            throw new UnsafePathException(path,
+                $"{label} cannot be a protected Windows folder " +
+                "(Desktop, Documents, Downloads, drive root, ...). " +
+                "Please create a subfolder and use that instead.");
+    }
+
+    /// <summary>
+    /// Throws if the given path is, or is inside, a protected Windows
+    /// folder. Used for the tools folder, which must not live on the
+    /// Desktop or in Documents even inside a subfolder.
     /// </summary>
     public static void AssertNotProtected(string path)
     {
         if (string.IsNullOrWhiteSpace(path)) return;
-
-        string full;
-        try { full = Path.GetFullPath(path); }
-        catch { return; }
-
-        full = full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var full = Normalise(path);
 
         foreach (var prot in NormalisedProtectedPaths())
         {
@@ -145,6 +155,31 @@ public static class SafePathGuard
         }
     }
 
+    /// <summary>
+    /// The full check that WipeDirectory performs before deleting. Refuses:
+    ///   - empty or whitespace paths
+    ///   - drive roots
+    ///   - protected roots (Desktop itself, not a subfolder)
+    ///   - paths shorter than 4 characters
+    /// </summary>
+    public static void AssertSafeToWipe(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            throw new UnsafePathException(path ?? "", "path is empty");
+
+        var full = Normalise(path);
+
+        if (IsDriveRoot(full))
+            throw new UnsafePathException(full, "path is a drive root");
+
+        if (full.Length < 4)
+            throw new UnsafePathException(full, "path is too short to be safe");
+
+        if (IsProtectedRoot(full))
+            throw new UnsafePathException(full,
+                "path is a protected Windows folder (Desktop, Documents, ...)");
+    }
+
     private static bool IsDriveRoot(string path)
     {
         if (path.Length == 2 && path[1] == ':') return true;
@@ -153,10 +188,10 @@ public static class SafePathGuard
         return false;
     }
 
-    /// <summary>
-    /// Counts files and subdirectories in a folder (recursively) and returns
-    /// the total byte size. Used to decide whether a wipe needs confirmation.
-    /// </summary>
+    // ---------------------------------------------------------------
+    // Measurement (used for confirmation dialogs)
+    // ---------------------------------------------------------------
+
     public static (int FileCount, int DirCount, long TotalBytes) MeasureDirectory(string path)
     {
         int files = 0, dirs = 0;
