@@ -1,0 +1,38 @@
+name: Build PS4 Remarry
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: # Allows you to run it manually
+
+jobs:
+  build:
+    runs-on: windows-latest # Needed for WinForms and net10.0-windows
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x' # Match your project's target framework
+
+    - name: Restore dependencies
+      run: dotnet restore PS4Remarry.sln
+
+    - name: Build
+      run: dotnet build PS4Remarry.sln --configuration Release --no-restore
+
+    - name: Publish (Create the Executable)
+      run: |
+        dotnet publish src/PS4Remarry.WinForms/PS4Remarry.WinForms.csproj `
+          --configuration Release `
+          --output publish `
+          --self-contained false
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: PS4Remarry-Executable
+        path: publish/ # This uploads the entire published output folder
