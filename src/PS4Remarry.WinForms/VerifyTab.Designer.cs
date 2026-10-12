@@ -5,19 +5,19 @@ partial class VerifyTab
     private System.ComponentModel.IContainer components = null;
 
     private System.Windows.Forms.Label   lblGame;
-    private System.Windows.Forms.TextBox txtGame;
+    private System.Windows.Forms.RichTextBox txtGame;
     private System.Windows.Forms.Button  btnBrowseGame;
     private System.Windows.Forms.Label   lblUpdate;
-    private System.Windows.Forms.TextBox txtUpdate;
+    private System.Windows.Forms.RichTextBox txtUpdate;
     private System.Windows.Forms.Button  btnBrowseUpdate;
     private System.Windows.Forms.Button  btnCheck;
     private System.Windows.Forms.Button  btnClear;
     private System.Windows.Forms.Label   lblGameDigest;
-    private System.Windows.Forms.TextBox txtGameDigest;
+    private System.Windows.Forms.RichTextBox txtGameDigest;
     private System.Windows.Forms.Label   lblUpdateDigest;
-    private System.Windows.Forms.TextBox txtUpdateDigest;
+    private System.Windows.Forms.RichTextBox txtUpdateDigest;
     private System.Windows.Forms.Label   lblStatus;
-    private System.Windows.Forms.TextBox txtLog;
+    private System.Windows.Forms.RichTextBox txtLog;
 
     protected override void Dispose(bool disposing)
     {
@@ -31,19 +31,19 @@ partial class VerifyTab
     private void InitializeComponent()
     {
         lblGame = new Label();
-        txtGame = new TextBox();
+        txtGame = new RichTextBox();
         btnBrowseGame = new Button();
         lblUpdate = new Label();
-        txtUpdate = new TextBox();
+        txtUpdate = new RichTextBox();
         btnBrowseUpdate = new Button();
         btnCheck = new Button();
         btnClear = new Button();
         lblGameDigest = new Label();
-        txtGameDigest = new TextBox();
+        txtGameDigest = new RichTextBox();
         lblUpdateDigest = new Label();
-        txtUpdateDigest = new TextBox();
+        txtUpdateDigest = new RichTextBox();
         lblStatus = new Label();
-        txtLog = new TextBox();
+        txtLog = new RichTextBox();
         SuspendLayout();
         // 
         // lblGame
@@ -62,8 +62,11 @@ partial class VerifyTab
         txtGame.Anchor = AnchorStyles.None;
         txtGame.Location = new Point(90, 16);
         txtGame.Name = "txtGame";
+        txtGame.ScrollBars = RichTextBoxScrollBars.None;
         txtGame.Size = new Size(608, 23);
         txtGame.TabIndex = 1;
+        txtGame.Text = "";
+        txtGame.WordWrap = false;
         // 
         // btnBrowseGame
         // 
@@ -91,8 +94,11 @@ partial class VerifyTab
         txtUpdate.Anchor = AnchorStyles.None;
         txtUpdate.Location = new Point(90, 47);
         txtUpdate.Name = "txtUpdate";
+        txtUpdate.ScrollBars = RichTextBoxScrollBars.None;
         txtUpdate.Size = new Size(608, 23);
         txtUpdate.TabIndex = 4;
+        txtUpdate.Text = "";
+        txtUpdate.WordWrap = false;
         // 
         // btnBrowseUpdate
         // 
@@ -142,8 +148,11 @@ partial class VerifyTab
         txtGameDigest.Location = new Point(90, 109);
         txtGameDigest.Name = "txtGameDigest";
         txtGameDigest.ReadOnly = true;
+        txtGameDigest.ScrollBars = RichTextBoxScrollBars.None;
         txtGameDigest.Size = new Size(702, 22);
         txtGameDigest.TabIndex = 9;
+        txtGameDigest.Text = "";
+        txtGameDigest.WordWrap = false;
         // 
         // lblUpdateDigest
         // 
@@ -162,8 +171,11 @@ partial class VerifyTab
         txtUpdateDigest.Location = new Point(90, 137);
         txtUpdateDigest.Name = "txtUpdateDigest";
         txtUpdateDigest.ReadOnly = true;
+        txtUpdateDigest.ScrollBars = RichTextBoxScrollBars.None;
         txtUpdateDigest.Size = new Size(702, 22);
         txtUpdateDigest.TabIndex = 11;
+        txtUpdateDigest.Text = "";
+        txtUpdateDigest.WordWrap = false;
         txtUpdateDigest.TextChanged += txtUpdateDigest_TextChanged;
         // 
         // lblStatus
@@ -183,11 +195,13 @@ partial class VerifyTab
         txtLog.Font = new Font("Consolas", 9F);
         txtLog.ForeColor = Color.Gainsboro;
         txtLog.Location = new Point(3, 204);
-        txtLog.Multiline = true;
+        txtLog.Margin = new Padding(0);
         txtLog.Name = "txtLog";
         txtLog.ReadOnly = true;
+        txtLog.ScrollBars = RichTextBoxScrollBars.Vertical;
         txtLog.Size = new Size(789, 275);
         txtLog.TabIndex = 13;
+        txtLog.Text = "";
         // 
         // VerifyTab
         // 

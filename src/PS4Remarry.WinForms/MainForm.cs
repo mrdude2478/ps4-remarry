@@ -27,7 +27,7 @@ public partial class MainForm : Form
         try
         {
             ToolLocator.Default().EnsureToolsExist();
-            AppendLog("Ready. Tools verified. Drop a .pkg into either textbox, or click Browse.");
+            AppendLog("Ready. Tools verified. Drop a .pkg into either input box, or click Browse.");
         }
         catch (Exception ex)
         {
@@ -333,7 +333,7 @@ public partial class MainForm : Form
 
         var tools = ToolLocator.Default();
 
-        if (!ConfirmWorkFolderWipe(tools.WorkDir))
+        if (!WorkFolderPrompt.ConfirmWipe(this, tools.WorkDir))
             return;
 
         var before = new HashSet<string>(
@@ -450,7 +450,7 @@ public partial class MainForm : Form
 
         var tools = ToolLocator.Default();
 
-        if (!ConfirmWorkFolderWipe(tools.WorkDir))
+        if (!WorkFolderPrompt.ConfirmWipe(this, tools.WorkDir))
             return;
 
         try
@@ -987,31 +987,6 @@ public partial class MainForm : Form
 
         SetCoverButtonsEnabled(!busy);
         SetRenameButtonsEnabled(!busy);
-    }
-
-    private bool ConfirmWorkFolderWipe(string workDir)
-    {
-        try
-        {
-            if (!Directory.Exists(workDir)) return true;
-
-            var (files, dirs, bytes) = SafePathGuard.MeasureDirectory(workDir);
-            if (files == 0 && dirs == 0) return true;
-
-            var answer = MessageBox.Show(this,
-                "The tool's work folder currently contains data:\n\n" +
-                workDir + "\n\n" +
-                $"{files} file(s), {dirs} folder(s), {Formatting.FormatBytes(bytes)} total.\n\n" +
-                "This will be deleted before the next operation runs. Continue?",
-                "Work folder will be cleared",
-                MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-
-            return answer == DialogResult.Yes;
-        }
-        catch
-        {
-            return true;
-        }
     }
 
     private void AppendLog(string line)

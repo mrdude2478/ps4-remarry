@@ -20,17 +20,17 @@ partial class MainForm
     private PS4Remarry.WinForms.FileListTab fileListTab;
 
     private System.Windows.Forms.Label   lblGame;
-    private System.Windows.Forms.TextBox txtGame;
+    private System.Windows.Forms.RichTextBox txtGame;
     private System.Windows.Forms.Button  btnBrowseGame;
     private System.Windows.Forms.Button  btnRenameGame;
 
     private System.Windows.Forms.Label   lblUpdate;
-    private System.Windows.Forms.TextBox txtUpdate;
+    private System.Windows.Forms.RichTextBox txtUpdate;
     private System.Windows.Forms.Button  btnBrowseUpdate;
     private System.Windows.Forms.Button  btnRenameUpdate;
 
     private System.Windows.Forms.Label   lblOutput;
-    private System.Windows.Forms.TextBox txtOutput;
+    private System.Windows.Forms.RichTextBox txtOutput;
     private System.Windows.Forms.Button  btnBrowseOutput;
 
     private System.Windows.Forms.Button  btnRun;
@@ -43,7 +43,7 @@ partial class MainForm
     private System.Windows.Forms.Button  btnShowBackground;
 
     private System.Windows.Forms.ProgressBar progressBar;
-    private System.Windows.Forms.TextBox     txtLog;
+    private System.Windows.Forms.RichTextBox     txtLog;
     private System.Windows.Forms.StatusStrip statusStrip;
     private System.Windows.Forms.ToolStripStatusLabel statusLabel;
 
@@ -59,15 +59,15 @@ partial class MainForm
         tabControl = new TabControl();
         tabSingle = new TabPage();
         lblGame = new Label();
-        txtGame = new TextBox();
+        txtGame = new RichTextBox();
         btnBrowseGame = new Button();
         btnRenameGame = new Button();
         lblUpdate = new Label();
-        txtUpdate = new TextBox();
+        txtUpdate = new RichTextBox();
         btnBrowseUpdate = new Button();
         btnRenameUpdate = new Button();
         lblOutput = new Label();
-        txtOutput = new TextBox();
+        txtOutput = new RichTextBox();
         btnBrowseOutput = new Button();
         btnRun = new Button();
         btnMerge = new Button();
@@ -77,7 +77,7 @@ partial class MainForm
         btnShowIcon = new Button();
         btnShowBackground = new Button();
         progressBar = new ProgressBar();
-        txtLog = new TextBox();
+        txtLog = new RichTextBox();
         tabBatch = new TabPage();
         batchTab = new BatchTab();
         tabVerify = new TabPage();
@@ -160,8 +160,11 @@ partial class MainForm
         txtGame.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         txtGame.Location = new Point(113, 5);
         txtGame.Name = "txtGame";
+        txtGame.ScrollBars = RichTextBoxScrollBars.None;
         txtGame.Size = new Size(552, 23);
         txtGame.TabIndex = 1;
+        txtGame.Text = "";
+        txtGame.WordWrap = false;
         txtGame.DragDrop += PkgBox_DragDrop;
         txtGame.DragEnter += PkgBox_DragEnter;
         // 
@@ -202,8 +205,11 @@ partial class MainForm
         txtUpdate.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         txtUpdate.Location = new Point(113, 39);
         txtUpdate.Name = "txtUpdate";
+        txtUpdate.ScrollBars = RichTextBoxScrollBars.None;
         txtUpdate.Size = new Size(552, 23);
         txtUpdate.TabIndex = 5;
+        txtUpdate.Text = "";
+        txtUpdate.WordWrap = false;
         txtUpdate.DragDrop += PkgBox_DragDrop;
         txtUpdate.DragEnter += PkgBox_DragEnter;
         // 
@@ -243,8 +249,11 @@ partial class MainForm
         txtOutput.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         txtOutput.Location = new Point(113, 73);
         txtOutput.Name = "txtOutput";
+        txtOutput.ScrollBars = RichTextBoxScrollBars.None;
         txtOutput.Size = new Size(552, 23);
         txtOutput.TabIndex = 9;
+        txtOutput.Text = "";
+        txtOutput.WordWrap = false;
         // 
         // btnBrowseOutput
         // 
@@ -346,12 +355,12 @@ partial class MainForm
         txtLog.Font = new Font("Consolas", 9F);
         txtLog.ForeColor = Color.Gainsboro;
         txtLog.Location = new Point(7, 189);
-        txtLog.Multiline = true;
         txtLog.Name = "txtLog";
         txtLog.ReadOnly = true;
-        txtLog.ScrollBars = ScrollBars.Vertical;
+        txtLog.ScrollBars = RichTextBoxScrollBars.Vertical;
         txtLog.Size = new Size(790, 293);
         txtLog.TabIndex = 18;
+        txtLog.Text = "";
         // 
         // tabBatch
         // 

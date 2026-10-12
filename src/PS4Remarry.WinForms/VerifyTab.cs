@@ -23,7 +23,7 @@ public partial class VerifyTab : UserControl
         btnClear.Click += (_, _) => Clear();
     }
 
-    private void BrowseInto(TextBox target, string title)
+    private void BrowseInto(RichTextBox target, string title)
     {
         using var dlg = new OpenFileDialog
         {

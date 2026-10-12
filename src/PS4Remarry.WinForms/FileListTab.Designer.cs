@@ -5,7 +5,7 @@ partial class FileListTab
     private System.ComponentModel.IContainer components = null;
 
     private System.Windows.Forms.Label        lblSource;
-    private System.Windows.Forms.TextBox      txtSourcePkg;
+    private System.Windows.Forms.RichTextBox      txtSourcePkg;
     private System.Windows.Forms.Button       btnBrowsePkg;
     private System.Windows.Forms.Button       btnLoad;
     private System.Windows.Forms.Button       btnExtractSelected;
@@ -13,10 +13,10 @@ partial class FileListTab
     private System.Windows.Forms.ProgressBar  progressBar;
     private System.Windows.Forms.TreeView     treeFiles;
     private System.Windows.Forms.Label        lblPathLabel;
-    private System.Windows.Forms.TextBox      txtPath;
+    private System.Windows.Forms.RichTextBox      txtPath;
     private System.Windows.Forms.Label        lblTypeLabel;
-    private System.Windows.Forms.TextBox      txtType;
-    private System.Windows.Forms.TextBox      txtLog;
+    private System.Windows.Forms.RichTextBox      txtType;
+    private System.Windows.Forms.RichTextBox      txtLog;
     private System.Windows.Forms.Label        lblSummary;
 
     protected override void Dispose(bool disposing)
@@ -31,7 +31,7 @@ partial class FileListTab
     private void InitializeComponent()
     {
         lblSource = new Label();
-        txtSourcePkg = new TextBox();
+        txtSourcePkg = new RichTextBox();
         btnBrowsePkg = new Button();
         btnLoad = new Button();
         btnExtractSelected = new Button();
@@ -39,11 +39,11 @@ partial class FileListTab
         progressBar = new ProgressBar();
         treeFiles = new TreeView();
         lblPathLabel = new Label();
-        txtPath = new TextBox();
+        txtPath = new RichTextBox();
         lblTypeLabel = new Label();
-        txtType = new TextBox();
+        txtType = new RichTextBox();
         btnExtractAll = new Button();
-        txtLog = new TextBox();
+        txtLog = new RichTextBox();
         lblSummary = new Label();
         SuspendLayout();
         // 
@@ -60,8 +60,11 @@ partial class FileListTab
         txtSourcePkg.AllowDrop = true;
         txtSourcePkg.Location = new Point(61, 8);
         txtSourcePkg.Name = "txtSourcePkg";
+        txtSourcePkg.ScrollBars = RichTextBoxScrollBars.None;
         txtSourcePkg.Size = new Size(632, 23);
         txtSourcePkg.TabIndex = 1;
+        txtSourcePkg.Text = "";
+        txtSourcePkg.WordWrap = false;
         // 
         // btnBrowsePkg
         // 
@@ -130,8 +133,11 @@ partial class FileListTab
         txtPath.Location = new Point(181, 292);
         txtPath.Name = "txtPath";
         txtPath.ReadOnly = true;
+        txtPath.ScrollBars = RichTextBoxScrollBars.None;
         txtPath.Size = new Size(608, 23);
         txtPath.TabIndex = 2;
+        txtPath.Text = "";
+        txtPath.WordWrap = false;
         // 
         // lblTypeLabel
         // 
@@ -146,8 +152,11 @@ partial class FileListTab
         txtType.Location = new Point(42, 292);
         txtType.Name = "txtType";
         txtType.ReadOnly = true;
+        txtType.ScrollBars = RichTextBoxScrollBars.None;
         txtType.Size = new Size(101, 23);
         txtType.TabIndex = 6;
+        txtType.Text = "";
+        txtType.WordWrap = false;
         // 
         // btnExtractAll
         // 
@@ -164,12 +173,12 @@ partial class FileListTab
         txtLog.Font = new Font("Consolas", 9F);
         txtLog.ForeColor = Color.Gainsboro;
         txtLog.Location = new Point(9, 68);
-        txtLog.Multiline = true;
         txtLog.Name = "txtLog";
         txtLog.ReadOnly = true;
-        txtLog.ScrollBars = ScrollBars.Vertical;
+        txtLog.ScrollBars = RichTextBoxScrollBars.Vertical;
         txtLog.Size = new Size(780, 220);
         txtLog.TabIndex = 8;
+        txtLog.Text = "";
         // 
         // lblSummary
         // 

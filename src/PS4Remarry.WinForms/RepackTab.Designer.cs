@@ -64,6 +64,7 @@ partial class RepackTab
         txtSourcePkg.Name = "txtSourcePkg";
         txtSourcePkg.Size = new Size(642, 23);
         txtSourcePkg.TabIndex = 1;
+        txtSourcePkg.WordWrap = false;
         // 
         // btnBrowsePkg
         // 
@@ -74,7 +75,6 @@ partial class RepackTab
         btnBrowsePkg.TabIndex = 2;
         btnBrowsePkg.Text = "Browse...";
         btnBrowsePkg.UseVisualStyleBackColor = true;
-  
         // 
         // lblExtract
         // 
@@ -93,6 +93,7 @@ partial class RepackTab
         txtExtractFolder.Name = "txtExtractFolder";
         txtExtractFolder.Size = new Size(642, 23);
         txtExtractFolder.TabIndex = 4;
+        txtExtractFolder.WordWrap = false;
         // 
         // btnBrowseExtract
         // 

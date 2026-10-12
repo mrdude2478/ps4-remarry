@@ -5,22 +5,22 @@ partial class DlcTab
     private System.ComponentModel.IContainer components = null;
 
     private System.Windows.Forms.Label        lblContentId;
-    private System.Windows.Forms.TextBox      txtContentId;
+    private System.Windows.Forms.RichTextBox      txtContentId;
     private System.Windows.Forms.Label        lblTitleIdPreview;
     private System.Windows.Forms.Label        lblTitle;
-    private System.Windows.Forms.TextBox      txtTitle;
+    private System.Windows.Forms.RichTextBox      txtTitle;
     private System.Windows.Forms.Label        lblIcon;
-    private System.Windows.Forms.TextBox      txtIcon;
+    private System.Windows.Forms.RichTextBox      txtIcon;
     private System.Windows.Forms.Button       btnBrowseIcon;
     private System.Windows.Forms.Button       btnClearIcon;
     private System.Windows.Forms.Label        lblOutput;
-    private System.Windows.Forms.TextBox      txtOutput;
+    private System.Windows.Forms.RichTextBox      txtOutput;
     private System.Windows.Forms.Button       btnBrowseOutput;
     private System.Windows.Forms.Button       btnCreate;
     private System.Windows.Forms.Button       btnOpenOutput;
     private System.Windows.Forms.Button       btnCancel;
     private System.Windows.Forms.ProgressBar  progressBar;
-    private System.Windows.Forms.TextBox      txtLog;
+    private System.Windows.Forms.RichTextBox      txtLog;
 
     protected override void Dispose(bool disposing)
     {
@@ -34,22 +34,22 @@ partial class DlcTab
     private void InitializeComponent()
     {
         lblContentId = new Label();
-        txtContentId = new TextBox();
+        txtContentId = new RichTextBox();
         lblTitleIdPreview = new Label();
         lblTitle = new Label();
-        txtTitle = new TextBox();
+        txtTitle = new RichTextBox();
         lblIcon = new Label();
-        txtIcon = new TextBox();
+        txtIcon = new RichTextBox();
         btnBrowseIcon = new Button();
         btnClearIcon = new Button();
         lblOutput = new Label();
-        txtOutput = new TextBox();
+        txtOutput = new RichTextBox();
         btnBrowseOutput = new Button();
         btnCreate = new Button();
         btnOpenOutput = new Button();
         btnCancel = new Button();
         progressBar = new ProgressBar();
-        txtLog = new TextBox();
+        txtLog = new RichTextBox();
         SuspendLayout();
         // 
         // lblContentId
@@ -66,8 +66,11 @@ partial class DlcTab
         txtContentId.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         txtContentId.Location = new Point(110, 15);
         txtContentId.Name = "txtContentId";
+        txtContentId.ScrollBars = RichTextBoxScrollBars.None;
         txtContentId.Size = new Size(610, 23);
         txtContentId.TabIndex = 1;
+        txtContentId.Text = "";
+        txtContentId.WordWrap = false;
         // 
         // lblTitleIdPreview
         // 
@@ -94,8 +97,11 @@ partial class DlcTab
         txtTitle.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         txtTitle.Location = new Point(110, 44);
         txtTitle.Name = "txtTitle";
+        txtTitle.ScrollBars = RichTextBoxScrollBars.None;
         txtTitle.Size = new Size(610, 23);
         txtTitle.TabIndex = 4;
+        txtTitle.Text = "";
+        txtTitle.WordWrap = false;
         // 
         // lblIcon
         // 
@@ -111,8 +117,11 @@ partial class DlcTab
         txtIcon.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         txtIcon.Location = new Point(110, 73);
         txtIcon.Name = "txtIcon";
+        txtIcon.ScrollBars = RichTextBoxScrollBars.None;
         txtIcon.Size = new Size(440, 23);
         txtIcon.TabIndex = 6;
+        txtIcon.Text = "";
+        txtIcon.WordWrap = false;
         // 
         // btnBrowseIcon
         // 
@@ -148,8 +157,11 @@ partial class DlcTab
         txtOutput.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         txtOutput.Location = new Point(110, 103);
         txtOutput.Name = "txtOutput";
+        txtOutput.ScrollBars = RichTextBoxScrollBars.None;
         txtOutput.Size = new Size(520, 23);
         txtOutput.TabIndex = 10;
+        txtOutput.Text = "";
+        txtOutput.WordWrap = false;
         // 
         // btnBrowseOutput
         // 
@@ -204,12 +216,12 @@ partial class DlcTab
         txtLog.Font = new Font("Consolas", 9F);
         txtLog.ForeColor = Color.Gainsboro;
         txtLog.Location = new Point(12, 198);
-        txtLog.Multiline = true;
         txtLog.Name = "txtLog";
         txtLog.ReadOnly = true;
-        txtLog.ScrollBars = ScrollBars.Vertical;
+        txtLog.ScrollBars = RichTextBoxScrollBars.Vertical;
         txtLog.Size = new Size(712, 287);
         txtLog.TabIndex = 16;
+        txtLog.Text = "";
         // 
         // DlcTab
         // 

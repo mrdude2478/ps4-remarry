@@ -15,7 +15,7 @@ partial class BatchTab
     private System.Windows.Forms.Label            lblParallel;
     private System.Windows.Forms.NumericUpDown    numParallel;
     private System.Windows.Forms.DataGridView     grid;
-    private System.Windows.Forms.TextBox          txtLog;
+    private System.Windows.Forms.RichTextBox          txtLog;
 
     protected override void Dispose(bool disposing)
     {
@@ -39,7 +39,7 @@ partial class BatchTab
         lblParallel = new Label();
         numParallel = new NumericUpDown();
         grid = new DataGridView();
-        txtLog = new TextBox();
+        txtLog = new RichTextBox();
         toolbarPanel.SuspendLayout();
         ((System.ComponentModel.ISupportInitialize)numParallel).BeginInit();
         ((System.ComponentModel.ISupportInitialize)grid).BeginInit();
@@ -174,7 +174,7 @@ partial class BatchTab
         txtLog.Multiline = true;
         txtLog.Name = "txtLog";
         txtLog.ReadOnly = true;
-        txtLog.ScrollBars = ScrollBars.Vertical;
+        txtLog.ScrollBars = RichTextBoxScrollBars.Vertical;
         txtLog.Size = new Size(781, 231);
         txtLog.TabIndex = 2;
         // 

@@ -1,5 +1,5 @@
-using PS4Remarry.Core;
 using System.Text;
+using PS4Remarry.Core;
 
 namespace PS4Remarry.WinForms;
 
@@ -20,10 +20,15 @@ public partial class FileListTab : UserControl
 
     private string? _lastInfoDumpedFor;
 
+    private ContextMenuStrip? _treeContextMenu;
+    private ToolStripMenuItem? _miExtractFolder;
+    private ToolStripMenuItem? _miExtractFile;
+
     public FileListTab()
     {
         InitializeComponent();
         WireEvents();
+        BuildTreeContextMenu();
         SetupLogFlushTimer();
         UpdateButtonStates();
     }
@@ -35,21 +40,70 @@ public partial class FileListTab : UserControl
         _logFlushTimer.Start();
     }
 
+    private void BuildTreeContextMenu()
+    {
+        _treeContextMenu = new ContextMenuStrip();
+
+        _miExtractFolder = new ToolStripMenuItem("Extract Folder...");
+        _miExtractFolder.Click += async (_, _) =>
+        {
+            var node = treeFiles.SelectedNode?.Tag as PkgFileListReader.TreeNode;
+            if (node is null || !node.IsFolder) return;
+            await ExtractFolderAsync(node);
+        };
+
+        _miExtractFile = new ToolStripMenuItem("Extract File...");
+        _miExtractFile.Click += async (_, _) => await ExtractSelectedAsync();
+
+        _treeContextMenu.Items.Add(_miExtractFolder);
+        _treeContextMenu.Items.Add(_miExtractFile);
+        _treeContextMenu.Items.Add(new ToolStripSeparator());
+        _treeContextMenu.Items.Add(new ToolStripMenuItem("Copy Path", null, (_, _) =>
+        {
+            var node = treeFiles.SelectedNode?.Tag as PkgFileListReader.TreeNode;
+            if (node is not null && !string.IsNullOrEmpty(node.FullPath))
+            {
+                try { Clipboard.SetText(node.FullPath); } catch { }
+            }
+        }));
+    }
+
     private void WireEvents()
     {
         txtSourcePkg.AllowDrop = true;
         txtSourcePkg.DragEnter += PkgBox_DragEnter;
-        txtSourcePkg.DragDrop += PkgBox_DragDrop;
+        txtSourcePkg.DragDrop  += PkgBox_DragDrop;
         txtSourcePkg.TextChanged += (_, _) => UpdateButtonStates();
 
-        btnBrowsePkg.Click += (_, _) => BrowsePkg();
-        btnLoad.Click += async (_, _) => await LoadFileListAsync();
+        btnBrowsePkg.Click       += (_, _) => BrowsePkg();
+        btnLoad.Click            += async (_, _) => await LoadFileListAsync();
         btnExtractSelected.Click += async (_, _) => await ExtractSelectedAsync();
-        btnExtractAll.Click += async (_, _) => await ExtractAllAsync();
-        btnCancel.Click += (_, _) => CancelCurrentOperation();
+        btnExtractAll.Click      += async (_, _) => await ExtractAllAsync();
+        btnCancel.Click          += (_, _) => CancelCurrentOperation();
 
         treeFiles.BeforeExpand += TreeFiles_BeforeExpand;
-        treeFiles.AfterSelect += TreeFiles_AfterSelect;
+        treeFiles.AfterSelect  += TreeFiles_AfterSelect;
+        treeFiles.MouseUp      += TreeFiles_MouseUp;
+    }
+
+    private void TreeFiles_MouseUp(object? sender, MouseEventArgs e)
+    {
+        if (e.Button != MouseButtons.Right) return;
+        if (_treeContextMenu is null) return;
+
+        var hit = treeFiles.GetNodeAt(e.X, e.Y);
+        if (hit is not null)
+            treeFiles.SelectedNode = hit;
+
+        var node = treeFiles.SelectedNode?.Tag as PkgFileListReader.TreeNode;
+        bool hasNode = node is not null;
+        bool isFolder = node?.IsFolder == true;
+
+        if (_miExtractFolder is not null) _miExtractFolder.Enabled = hasNode && isFolder && !_isBusy;
+        if (_miExtractFile is not null)   _miExtractFile.Enabled   = hasNode && !isFolder && !_isBusy;
+
+        if (hasNode)
+            _treeContextMenu.Show(treeFiles, e.Location);
     }
 
     // ---------- Browsing / drag/drop ----------
@@ -250,13 +304,87 @@ public partial class FileListTab : UserControl
             return;
         }
 
+        await ExtractManyAsync(new[] { node }, $"File: {node.FullPath}");
+    }
+
+    // ---------- Extract a folder and all its contents ----------
+
+    private async Task ExtractFolderAsync(PkgFileListReader.TreeNode folder)
+    {
+        if (_isBusy) return;
+
+        var files = CollectLeaves(folder).ToList();
+        if (files.Count == 0)
+        {
+            Warn("The selected folder contains no files.");
+            return;
+        }
+
+        // Use the folder's own leaf name as the top-level folder at the
+        // destination. So extracting Image0/sce_sys/trophy to C:\Test
+        // produces C:\Test\trophy\... rather than
+        // C:\Test\Image0\sce_sys\trophy\...
+        var leafName = folder.FullPath.Split('/').Last();
+
+        await ExtractManyAsync(
+            files,
+            $"Folder: {folder.FullPath} ({files.Count} file(s))",
+            stripPrefix: folder.FullPath,
+            folderName: leafName);
+    }
+
+    /// <summary>
+    /// Walks the tree under <paramref name="folder"/> and returns every
+    /// leaf (file) node.
+    /// </summary>
+    private static IEnumerable<PkgFileListReader.TreeNode> CollectLeaves(PkgFileListReader.TreeNode folder)
+    {
+        if (!folder.IsFolder) { yield return folder; yield break; }
+
+        foreach (var child in folder.Children)
+        {
+            if (child.IsFolder)
+            {
+                foreach (var leaf in CollectLeaves(child))
+                    yield return leaf;
+            }
+            else
+            {
+                yield return child;
+            }
+        }
+    }
+
+    // ---------- Shared extraction core ----------
+
+    /// <summary>
+    /// Extracts a set of files into a user-chosen folder.
+    ///
+    /// For single-file extraction, both <paramref name="stripPrefix"/> and
+    /// <paramref name="folderName"/> are null and each file lands at its
+    /// full internal path under the destination.
+    ///
+    /// For folder extraction, <paramref name="stripPrefix"/> is the folder's
+    /// internal path and <paramref name="folderName"/> is the folder's leaf
+    /// name. The result is &lt;destination&gt;\&lt;folderName&gt;\ with the
+    /// rest of each file's path preserved underneath.
+    /// </summary>
+    private async Task ExtractManyAsync(
+        IReadOnlyList<PkgFileListReader.TreeNode> files,
+        string label,
+        string? stripPrefix = null,
+        string? folderName = null)
+    {
+        if (_isBusy) return;
+        if (files.Count == 0) return;
+
         var source = txtSourcePkg.Text.Trim();
         if (!File.Exists(source)) { Warn("Source PKG not found."); return; }
 
         using var dlg = new FolderBrowserDialog
         {
-            Description = "Choose where to extract the file. The PKG's internal " +
-                          "folder structure will be recreated under this folder.",
+            Description = "Choose where to extract. The PKG's internal folder " +
+                          "structure will be recreated under this folder.",
             SelectedPath = Directory.Exists(Path.GetDirectoryName(source))
                 ? Path.GetDirectoryName(source)!
                 : AppContext.BaseDirectory,
@@ -265,7 +393,6 @@ public partial class FileListTab : UserControl
 
         var outputRoot = dlg.SelectedPath;
 
-        // SAFETY: refuse a protected root as output.
         if (SafePathGuard.IsProtectedRoot(outputRoot))
         {
             var suggestion = Path.Combine(outputRoot, "PS4Extract");
@@ -277,84 +404,102 @@ public partial class FileListTab : UserControl
             return;
         }
 
+        // For folder extraction, the effective output root is a subfolder
+        // named after the folder. For single-file extraction, it's the
+        // destination as-is.
+        var effectiveOutput = folderName is not null
+            ? Path.Combine(outputRoot, folderName)
+            : outputRoot;
+
+        // Confirm before merging into an existing folder of the same name.
+        if (folderName is not null && Directory.Exists(effectiveOutput))
+        {
+            var answer = MessageBox.Show(this,
+                "A folder with the same name already exists at the destination:" +
+                Environment.NewLine + Environment.NewLine +
+                effectiveOutput + Environment.NewLine + Environment.NewLine +
+                "Existing files with the same names will be overwritten. Continue?",
+                "Folder already exists",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (answer != DialogResult.Yes) return;
+        }
+
         StartOperation();
         progressBar.Value = 0;
 
         AppendLogToBuffer("");
-        AppendLogToBuffer("=== Extract single file ===");
-        AppendLogToBuffer($"File:   {node.FullPath}");
-        AppendLogToBuffer($"Output: {outputRoot}");
-        AppendLogToBuffer("---------------------------");
+        AppendLogToBuffer("=== Extract ===");
+        AppendLogToBuffer(label);
+        AppendLogToBuffer($"Output: {effectiveOutput}");
+        AppendLogToBuffer("-------------------");
         FlushLogIfDirty();
 
+        var tools = ToolLocator.Default();
         var progress = BuildProgress();
+
+        int succeeded = 0;
+        int failed = 0;
 
         try
         {
-            var tools = ToolLocator.Default();
-            var result = await PkgFileExtractor.ExtractOneAsync(
-                source, node.FullPath, outputRoot, tools, _runner, progress, _cts!.Token);
-
-            FlushLogIfDirty();
-
-            if (!result.Success)
+            for (int i = 0; i < files.Count; i++)
             {
-                AppendLogToBuffer("ERROR: " + (result.Error ?? "unknown"));
+                if (_cts!.Token.IsCancellationRequested) break;
+
+                var file = files[i];
+                var pct = 100.0 * i / files.Count;
+                progressBar.Value = (int)Math.Clamp(pct, 0, 100);
+
+                AppendLogToBuffer($"[{i + 1}/{files.Count}] {file.FullPath}");
                 FlushLogIfDirty();
-                statusLog("Extract failed.");
-                return;
+
+                try
+                {
+                    var result = await PkgFileExtractor.ExtractOneAsync(
+                        source, file.FullPath, effectiveOutput, tools, _runner,
+                        progress, _cts.Token,
+                        stripPrefix: stripPrefix);
+
+                    if (result.Success)
+                    {
+                        succeeded++;
+                    }
+                    else
+                    {
+                        failed++;
+                        AppendLogToBuffer("  ERROR: " + (result.Error ?? "unknown"));
+                        FlushLogIfDirty();
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    AppendLogToBuffer("  Cancelled.");
+                    FlushLogIfDirty();
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    failed++;
+                    AppendLogToBuffer("  ERROR: " + ex.Message);
+                    FlushLogIfDirty();
+                }
             }
 
-            AppendLogToBuffer("");
-            AppendLogToBuffer("Extracted: " + result.ExtractedPath);
-            FlushLogIfDirty();
-            statusLog("Extract complete.");
-
-            MessageBox.Show(this,
-                "File extracted to:" + Environment.NewLine + Environment.NewLine +
-                result.ExtractedPath,
-                "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-        catch (OperationCanceledException)
-        {
-            AppendLogToBuffer("Cancelled.");
-            FlushLogIfDirty();
-            progressBar.Value = 0;
-        }
-        catch (Exception ex)
-        {
-            AppendLogToBuffer("ERROR: " + ex.Message);
-            FlushLogIfDirty();
-            progressBar.Value = 0;
+            progressBar.Value = 100;
         }
         finally
         {
+            AppendLogToBuffer("");
+            AppendLogToBuffer($"Extracted {succeeded} file(s); {failed} failed.");
+            FlushLogIfDirty();
+
+            MessageBox.Show(this,
+                $"Extracted {succeeded} file(s); {failed} failed." + Environment.NewLine + Environment.NewLine +
+                "Output:" + Environment.NewLine + effectiveOutput,
+                "Extract complete", MessageBoxButtons.OK,
+                failed > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+
             EndOperation();
-        }
-    }
-
-    private bool ConfirmWorkFolderWipe(string workDir)
-    {
-        try
-        {
-            if (!Directory.Exists(workDir)) return true;
-
-            var (files, dirs, bytes) = SafePathGuard.MeasureDirectory(workDir);
-            if (files == 0 && dirs == 0) return true;
-
-            var answer = MessageBox.Show(this,
-                "The tool's work folder currently contains data:" + Environment.NewLine + Environment.NewLine +
-                workDir + Environment.NewLine + Environment.NewLine +
-                $"{files} file(s), {dirs} folder(s), {Formatting.FormatBytes(bytes)} total." + Environment.NewLine + Environment.NewLine +
-                "This will be deleted before the next operation runs. Continue?",
-                "Work folder will be cleared",
-                MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-
-            return answer == DialogResult.Yes;
-        }
-        catch
-        {
-            return true;
         }
     }
 
@@ -381,7 +526,6 @@ public partial class FileListTab : UserControl
 
         var outputRoot = dlg.SelectedPath;
 
-        // SAFETY: refuse a protected root as output.
         if (SafePathGuard.IsProtectedRoot(outputRoot))
         {
             var suggestion = Path.Combine(outputRoot, "PS4Extract");
@@ -409,7 +553,7 @@ public partial class FileListTab : UserControl
 
         var tools = ToolLocator.Default();
 
-        if (!ConfirmWorkFolderWipe(tools.WorkDir))
+        if (!WorkFolderPrompt.ConfirmWipe(this, tools.WorkDir))
             return;
 
         StartOperation();
@@ -449,8 +593,7 @@ public partial class FileListTab : UserControl
             if (answer == DialogResult.Yes)
             {
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
-                    "explorer.exe", $"\"{outputRoot}\"")
-                { UseShellExecute = true });
+                    "explorer.exe", $"\"{outputRoot}\"") { UseShellExecute = true });
             }
         }
         catch (OperationCanceledException)
@@ -559,22 +702,22 @@ public partial class FileListTab : UserControl
         var ext = Path.GetExtension(name).ToLowerInvariant();
         return ext switch
         {
-            ".pkg" => "PKG package",
-            ".sfo" => "System metadata",
-            ".png" => "Image (PNG)",
-            ".dds" => "Image (DDS)",
-            ".at9" => "Audio (AT9)",
-            ".mp4" => "Video (MP4)",
-            ".prx" => "PS4 module",
-            ".bin" => "Binary data",
-            ".ipak" => "Asset pack",
+            ".pkg"      => "PKG package",
+            ".sfo"      => "System metadata",
+            ".png"      => "Image (PNG)",
+            ".dds"      => "Image (DDS)",
+            ".at9"      => "Audio (AT9)",
+            ".mp4"      => "Video (MP4)",
+            ".prx"      => "PS4 module",
+            ".bin"      => "Binary data",
+            ".ipak"     => "Asset pack",
             ".manifest" => "Manifest",
-            ".dat" => "Data file",
-            ".lua" => "Lua script",
-            ".xml" => "XML data",
-            ".json" => "JSON data",
-            ".trp" => "Trophy data",
-            _ => "File"
+            ".dat"      => "Data file",
+            ".lua"      => "Lua script",
+            ".xml"      => "XML data",
+            ".json"     => "JSON data",
+            ".trp"      => "Trophy data",
+            _           => "File"
         };
     }
 
@@ -586,12 +729,12 @@ public partial class FileListTab : UserControl
         _cts = new CancellationTokenSource();
         _lastLoggedLine = null;
 
-        btnBrowsePkg.Enabled = false;
-        btnLoad.Enabled = false;
+        btnBrowsePkg.Enabled       = false;
+        btnLoad.Enabled            = false;
         btnExtractSelected.Enabled = false;
-        btnExtractAll.Enabled = false;
-        btnCancel.Enabled = true;
-        txtSourcePkg.Enabled = false;
+        btnExtractAll.Enabled      = false;
+        btnCancel.Enabled          = true;
+        txtSourcePkg.Enabled       = false;
     }
 
     private void EndOperation()
@@ -600,8 +743,8 @@ public partial class FileListTab : UserControl
         if (_cts is not null) { _cts.Dispose(); _cts = null; }
 
         btnBrowsePkg.Enabled = true;
-        btnLoad.Enabled = true;
-        btnCancel.Enabled = false;
+        btnLoad.Enabled      = true;
+        btnCancel.Enabled    = false;
         txtSourcePkg.Enabled = true;
         UpdateButtonStates();
 

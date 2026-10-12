@@ -152,7 +152,7 @@ public partial class RepackTab : UserControl
 
         var tools = ToolLocator.Default();
 
-        if (!ConfirmWorkFolderWipe(tools.WorkDir))
+        if (!WorkFolderPrompt.ConfirmWipe(this, tools.WorkDir))
             return;
 
         StartOperation();
@@ -307,7 +307,7 @@ public partial class RepackTab : UserControl
 
         var tools = ToolLocator.Default();
 
-        if (!ConfirmWorkFolderWipe(tools.WorkDir))
+        if (!WorkFolderPrompt.ConfirmWipe(this, tools.WorkDir))
             return;
 
         StartOperation();
@@ -517,31 +517,6 @@ public partial class RepackTab : UserControl
         btnCheck.Enabled = extractExists;
         btnRepack.Enabled = extractHasParam;
         btnCleanFolder.Enabled = extractExists;
-    }
-
-    private bool ConfirmWorkFolderWipe(string workDir)
-    {
-        try
-        {
-            if (!Directory.Exists(workDir)) return true;
-
-            var (files, dirs, bytes) = SafePathGuard.MeasureDirectory(workDir);
-            if (files == 0 && dirs == 0) return true;
-
-            var answer = MessageBox.Show(this,
-                "The tool's work folder currently contains data:" + Environment.NewLine + Environment.NewLine +
-                workDir + Environment.NewLine + Environment.NewLine +
-                $"{files} file(s), {dirs} folder(s), {Formatting.FormatBytes(bytes)} total." + Environment.NewLine + Environment.NewLine +
-                "This will be deleted before the next operation runs. Continue?",
-                "Work folder will be cleared",
-                MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-
-            return answer == DialogResult.Yes;
-        }
-        catch
-        {
-            return true;
-        }
     }
 
     private IProgress<ProgressReport> BuildProgress()
