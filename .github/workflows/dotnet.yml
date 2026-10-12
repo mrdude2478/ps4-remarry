@@ -3,7 +3,7 @@ name: Build PS4 Remarry
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 jobs:
   build:
@@ -24,21 +24,18 @@ jobs:
     - name: Build
       run: dotnet build PS4Remarry.sln --configuration Release --no-restore
 
-    - name: Publish (Create the Executable)
+    - name: Publish
       run: |
         dotnet publish src/PS4Remarry.WinForms/PS4Remarry.WinForms.csproj `
           --configuration Release `
           --output publish `
           --self-contained false
 
-    - name: Copy tools folder to publish directory
+    - name: Note about missing tools
       run: |
-        if (Test-Path "tools") {
-          Copy-Item -Path "tools" -Destination "publish/tools" -Recurse -Force
-          Write-Host "Copied tools folder to publish directory"
-        } else {
-          Write-Host "Warning: tools folder not found in repository root"
-        }
+        Write-Host "##[warning] The tools folder is not included in this artifact."
+        Write-Host "##[warning] Users must supply their own copy of PS4-Fake-PKG-Tools-3.87."
+        Write-Host "##[warning] Place the files in a 'tools' folder next to PS4Remarry.exe."
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v7
