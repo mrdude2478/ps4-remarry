@@ -44,7 +44,7 @@ public sealed record RepackInspection(
 public sealed class RepackPipeline
 {
     private readonly ProcessRunner _runner;
-    private readonly ToolLocator  _tools;
+    private readonly ToolLocator _tools;
 
     private const string ParamSfoBackupSuffix = ".ps4repack.param.sfo.bak";
 
@@ -134,7 +134,7 @@ public sealed class RepackPipeline
         {
             var sfo = SfoParser.ParseToDictionary(full);
             if (sfo.TryGetValue("CONTENT_ID", out var cid)) contentId = cid.Trim();
-            if (sfo.TryGetValue("CATEGORY",   out var cat)) category  = cat.Trim();
+            if (sfo.TryGetValue("CATEGORY", out var cat)) category = cat.Trim();
         }
         catch (SfoParseException) { }
 
@@ -147,14 +147,14 @@ public sealed class RepackPipeline
     {
         return category?.ToLowerInvariant() switch
         {
-            "gd"  => ("Base game (Game Data)",              true),
-            "gp"  => ("Update (Game Patch)",                false),
-            "gde" => ("DLC (Game Data Ext)",                false),
-            "gdk" => ("DLC (Game Data K)",                  false),
-            "gda" => ("DLC (Game Data A)",                  false),
-            "ac"  => ("Additional Content",                 false),
-            ""    => ("Unknown (no CATEGORY in SFO)",       false),
-            _     => ($"Unknown category '{category}'",     false),
+            "gd" => ("Base game (Game Data)", true),
+            "gp" => ("Update (Game Patch)", false),
+            "gde" => ("DLC (Game Data Ext)", false),
+            "gdk" => ("DLC (Game Data K)", false),
+            "gda" => ("DLC (Game Data A)", false),
+            "ac" => ("Additional Content", false),
+            "" => ("Unknown (no CATEGORY in SFO)", false),
+            _ => ($"Unknown category '{category}'", false),
         };
     }
 
@@ -227,7 +227,7 @@ public sealed class RepackPipeline
 
             progress?.Report(ProgressReport.Pct(50, "Merging Sc0 into Image0\\sce_sys..."));
             var image0 = Path.Combine(tempExtract, "Image0");
-            var sc0    = Path.Combine(tempExtract, "Sc0");
+            var sc0 = Path.Combine(tempExtract, "Sc0");
 
             if (!Directory.Exists(image0))
                 throw new DirectoryNotFoundException(
@@ -247,19 +247,19 @@ public sealed class RepackPipeline
             MoveDirectoryContents(image0, extractFull);
             FileSystemUtil.TryDeleteDirectory(tempExtract);
 
-            var sceSysPath   = Path.Combine(extractFull, "sce_sys");
+            var sceSysPath = Path.Combine(extractFull, "sce_sys");
             var paramSfoPath = Path.Combine(sceSysPath, "param.sfo");
-            var icon0Path    = Path.Combine(sceSysPath, "icon0.png");
+            var icon0Path = Path.Combine(sceSysPath, "icon0.png");
             var keystonePath = Path.Combine(sceSysPath, "keystone");
 
             bool paramSfoExists = File.Exists(paramSfoPath);
-            bool icon0Exists    = File.Exists(icon0Path);
+            bool icon0Exists = File.Exists(icon0Path);
             bool keystoneExists = File.Exists(keystonePath);
 
             progress?.Report(ProgressReport.Log(""));
             progress?.Report(ProgressReport.Log("=== Extract summary ==="));
             progress?.Report(ProgressReport.Log($"  param.sfo:  {(paramSfoExists ? "present" : "MISSING")}"));
-            progress?.Report(ProgressReport.Log($"  icon0.png:  {(icon0Exists    ? "present" : "not present (optional)")}"));
+            progress?.Report(ProgressReport.Log($"  icon0.png:  {(icon0Exists ? "present" : "not present (optional)")}"));
             progress?.Report(ProgressReport.Log($"  keystone:   {(keystoneExists ? "present" : inspection.KeystoneNeeded ? "MISSING (required for base game!)" : "not present (OK for update/DLC)")}"));
 
             if (inspection.KeystoneNeeded && !keystoneExists)
@@ -297,16 +297,16 @@ public sealed class RepackPipeline
 
             var log = new RepackExtractLog
             {
-                SourcePkg      = sourceFull,
+                SourcePkg = sourceFull,
                 SourceFileSize = inspection.FileSize,
-                TitleId        = inspection.TitleId,
-                ContentId      = inspection.ContentId,
-                Category       = inspection.Category,
-                CategoryLabel  = inspection.CategoryLabel,
+                TitleId = inspection.TitleId,
+                ContentId = inspection.ContentId,
+                Category = inspection.Category,
+                CategoryLabel = inspection.CategoryLabel,
                 KeystoneNeeded = inspection.KeystoneNeeded,
-                KeystoneFound  = keystoneExists,
-                ExtractedAt    = DateTime.Now,
-                ExtractTool    = "PS4 Remarry (orbis-pub-cmd 3.87)",
+                KeystoneFound = keystoneExists,
+                ExtractedAt = DateTime.Now,
+                ExtractTool = "PS4 Remarry (orbis-pub-cmd 3.87)",
             };
             log.Write(extractFull);
 
@@ -362,8 +362,8 @@ public sealed class RepackPipeline
 
         if (log is not null)
         {
-            category       = log.Category;
-            categoryLabel  = log.CategoryLabel;
+            category = log.Category;
+            categoryLabel = log.CategoryLabel;
             keystoneNeeded = log.KeystoneNeeded;
 
             progress?.Report(ProgressReport.Log(
@@ -384,7 +384,7 @@ public sealed class RepackPipeline
                 catch { }
             }
             var d = DescribeCategory(category);
-            categoryLabel  = d.Label;
+            categoryLabel = d.Label;
             keystoneNeeded = d.KeystoneNeeded;
 
             progress?.Report(ProgressReport.Log(
@@ -411,7 +411,7 @@ public sealed class RepackPipeline
                 "param.sfo is missing from sce_sys — cannot repack.", paramSfoPath);
 
         bool isBaseGame = category.Equals("gd", StringComparison.OrdinalIgnoreCase) || keystoneNeeded;
-        bool isPatch    = category.Equals("gp", StringComparison.OrdinalIgnoreCase);
+        bool isPatch = category.Equals("gp", StringComparison.OrdinalIgnoreCase);
 
         var genExe = isBaseGame ? _tools.Gengp4App : _tools.Gengp4Patch;
         progress?.Report(ProgressReport.Log(

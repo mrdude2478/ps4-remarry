@@ -11,6 +11,8 @@
     <AssemblyName>PS4Remarry</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>AnyCPU;x86</Platforms>
+    <StartupObject>PS4Remarry.WinForms.Program</StartupObject>
+    <ApplicationIcon>status.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,9 +20,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\tools\**\*"
-          Link="tools\%(RecursiveDir)%(Filename)%(Extension)"
-          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\tools\**\*" Link="tools\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="status.ico" />
   </ItemGroup>
 
 </Project>

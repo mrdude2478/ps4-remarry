@@ -45,20 +45,20 @@ public sealed class RepackExtractLog
 
                 switch (key)
                 {
-                    case "Source PKG":       log.SourcePkg = value; break;
+                    case "Source PKG": log.SourcePkg = value; break;
                     case "Source file size":
                         if (long.TryParse(value.Split(' ')[0], out var sz)) log.SourceFileSize = sz;
                         break;
-                    case "TITLE_ID":         log.TitleId = value; break;
-                    case "CONTENT_ID":       log.ContentId = value; break;
-                    case "CATEGORY":         log.Category = value; break;
-                    case "Category label":   log.CategoryLabel = value; break;
-                    case "Keystone needed":  log.KeystoneNeeded = ParseYesNo(value); break;
-                    case "Keystone found":   log.KeystoneFound = ParseYesNo(value); break;
+                    case "TITLE_ID": log.TitleId = value; break;
+                    case "CONTENT_ID": log.ContentId = value; break;
+                    case "CATEGORY": log.Category = value; break;
+                    case "Category label": log.CategoryLabel = value; break;
+                    case "Keystone needed": log.KeystoneNeeded = ParseYesNo(value); break;
+                    case "Keystone found": log.KeystoneFound = ParseYesNo(value); break;
                     case "Extracted at":
                         if (DateTime.TryParse(value, out var dt)) log.ExtractedAt = dt;
                         break;
-                    case "Extract tool":     log.ExtractTool = value; break;
+                    case "Extract tool": log.ExtractTool = value; break;
                 }
             }
             return log;

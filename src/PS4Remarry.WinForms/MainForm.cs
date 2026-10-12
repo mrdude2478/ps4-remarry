@@ -1,6 +1,5 @@
-using System.Diagnostics;
-using System.Drawing;
 using PS4Remarry.Core;
+using System.Diagnostics;
 
 namespace PS4Remarry.WinForms;
 

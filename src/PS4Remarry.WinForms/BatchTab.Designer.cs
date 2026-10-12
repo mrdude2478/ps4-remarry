@@ -174,6 +174,7 @@ partial class BatchTab
         txtLog.Multiline = true;
         txtLog.Name = "txtLog";
         txtLog.ReadOnly = true;
+        txtLog.ScrollBars = ScrollBars.Vertical;
         txtLog.Size = new Size(781, 231);
         txtLog.TabIndex = 2;
         // 

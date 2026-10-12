@@ -25,16 +25,16 @@ public partial class DlcTab : UserControl
     private void WireEvents()
     {
         txtContentId.TextChanged += (_, _) => OnContentIdChanged();
-        txtTitle.TextChanged     += (_, _) => UpdateButtonStates();
-        txtIcon.TextChanged      += (_, _) => UpdateButtonStates();
-        txtOutput.TextChanged    += (_, _) => UpdateButtonStates();
+        txtTitle.TextChanged += (_, _) => UpdateButtonStates();
+        txtIcon.TextChanged += (_, _) => UpdateButtonStates();
+        txtOutput.TextChanged += (_, _) => UpdateButtonStates();
 
-        btnBrowseIcon.Click   += (_, _) => BrowseIcon();
-        btnClearIcon.Click    += (_, _) => txtIcon.Clear();
+        btnBrowseIcon.Click += (_, _) => BrowseIcon();
+        btnClearIcon.Click += (_, _) => txtIcon.Clear();
         btnBrowseOutput.Click += (_, _) => BrowseOutput();
-        btnCreate.Click       += async (_, _) => await CreateAsync();
-        btnOpenOutput.Click   += (_, _) => OpenOutputFolder();
-        btnCancel.Click       += (_, _) => CancelCurrentOperation();
+        btnCreate.Click += async (_, _) => await CreateAsync();
+        btnOpenOutput.Click += (_, _) => OpenOutputFolder();
+        btnCancel.Click += (_, _) => CancelCurrentOperation();
     }
 
     // ---------- Live title ID preview ----------
@@ -106,7 +106,8 @@ public partial class DlcTab : UserControl
         var outDir = txtOutput.Text.Trim();
         if (!Directory.Exists(outDir)) { Warn("Output folder does not exist yet."); return; }
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
-            "explorer.exe", $"\"{outDir}\"") { UseShellExecute = true });
+            "explorer.exe", $"\"{outDir}\"")
+        { UseShellExecute = true });
     }
 
     // ---------- Create ----------
@@ -116,13 +117,13 @@ public partial class DlcTab : UserControl
         if (_isBusy) return;
 
         var contentId = txtContentId.Text.Trim();
-        var title     = txtTitle.Text.Trim();
-        var icon      = txtIcon.Text.Trim();
-        var output    = txtOutput.Text.Trim();
+        var title = txtTitle.Text.Trim();
+        var icon = txtIcon.Text.Trim();
+        var output = txtOutput.Text.Trim();
 
         if (string.IsNullOrEmpty(contentId)) { Warn("Enter a Content ID."); return; }
-        if (contentId.Length < 16)           { Warn("Content ID is too short."); return; }
-        if (string.IsNullOrEmpty(title))     { Warn("Enter a Title."); return; }
+        if (contentId.Length < 16) { Warn("Content ID is too short."); return; }
+        if (string.IsNullOrEmpty(title)) { Warn("Enter a Title."); return; }
         if (string.IsNullOrWhiteSpace(output)) { Warn("Pick an output folder."); return; }
 
         // SAFETY: refuse a protected root as output, even if typed by hand.
@@ -237,16 +238,16 @@ public partial class DlcTab : UserControl
         _isBusy = true;
         _cts = new CancellationTokenSource();
 
-        txtContentId.Enabled    = false;
-        txtTitle.Enabled        = false;
-        txtIcon.Enabled         = false;
-        txtOutput.Enabled       = false;
-        btnBrowseIcon.Enabled   = false;
-        btnClearIcon.Enabled    = false;
+        txtContentId.Enabled = false;
+        txtTitle.Enabled = false;
+        txtIcon.Enabled = false;
+        txtOutput.Enabled = false;
+        btnBrowseIcon.Enabled = false;
+        btnClearIcon.Enabled = false;
         btnBrowseOutput.Enabled = false;
-        btnCreate.Enabled       = false;
-        btnOpenOutput.Enabled   = false;
-        btnCancel.Enabled       = true;
+        btnCreate.Enabled = false;
+        btnOpenOutput.Enabled = false;
+        btnCancel.Enabled = true;
     }
 
     private void EndOperation()
@@ -254,15 +255,15 @@ public partial class DlcTab : UserControl
         _isBusy = false;
         if (_cts is not null) { _cts.Dispose(); _cts = null; }
 
-        txtContentId.Enabled    = true;
-        txtTitle.Enabled        = true;
-        txtIcon.Enabled         = true;
-        txtOutput.Enabled       = true;
-        btnBrowseIcon.Enabled   = true;
-        btnClearIcon.Enabled    = true;
+        txtContentId.Enabled = true;
+        txtTitle.Enabled = true;
+        txtIcon.Enabled = true;
+        txtOutput.Enabled = true;
+        btnBrowseIcon.Enabled = true;
+        btnClearIcon.Enabled = true;
         btnBrowseOutput.Enabled = true;
-        btnOpenOutput.Enabled   = true;
-        btnCancel.Enabled       = false;
+        btnOpenOutput.Enabled = true;
+        btnCancel.Enabled = false;
         UpdateButtonStates();
     }
 
@@ -271,7 +272,7 @@ public partial class DlcTab : UserControl
         if (_isBusy) return;
 
         var contentId = txtContentId.Text.Trim();
-        var title     = txtTitle.Text.Trim();
+        var title = txtTitle.Text.Trim();
 
         bool ready = contentId.Length >= 16 && !string.IsNullOrWhiteSpace(title);
         btnCreate.Enabled = ready;

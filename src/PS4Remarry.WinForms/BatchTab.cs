@@ -1,6 +1,5 @@
-using System.ComponentModel;
-using System.Diagnostics;
 using PS4Remarry.Core;
+using System.ComponentModel;
 
 namespace PS4Remarry.WinForms;
 
@@ -12,6 +11,9 @@ public partial class BatchTab : UserControl
 
     private readonly BindingList<BatchJob> _jobs = new();
     private int _nextId = 1;
+
+    /// <summary>Where the last batch was written. Used by the "open folder" prompt.</summary>
+    private string? _lastBatchOutputRoot;
 
     public BatchTab()
     {
@@ -26,15 +28,11 @@ public partial class BatchTab : UserControl
     {
         numParallel.Minimum = 1;
         numParallel.Maximum = Math.Max(1, Environment.ProcessorCount * 2);
-        numParallel.Value   = Math.Max(1, Environment.ProcessorCount / 2);
+        numParallel.Value = Math.Max(1, Environment.ProcessorCount / 2);
     }
 
     private void SetupGridColumns()
     {
-        // Disable auto-generation BEFORE the data source is assigned. Setting
-        // it after, or relying on the designer to preserve it, doesn't work —
-        // AutoGenerateColumns is hidden from the designer and it will reset
-        // the property on save.
         grid.AutoGenerateColumns = false;
 
         var colId = new DataGridViewTextBoxColumn
@@ -62,7 +60,7 @@ public partial class BatchTab : UserControl
         var colOutput = new DataGridViewTextBoxColumn
         {
             HeaderText = "Output",
-            DataPropertyName = nameof(BatchJob.OutputDir),
+            DataPropertyName = nameof(BatchJob.OutputDisplay),
             FillWeight = 20,
             ReadOnly = true
         };
@@ -101,14 +99,14 @@ public partial class BatchTab : UserControl
     private void WireEvents()
     {
         grid.DragEnter += Grid_DragEnter;
-        grid.DragDrop  += Grid_DragDrop;
+        grid.DragDrop += Grid_DragDrop;
 
-        btnAdd.Click          += (_, _) => AddRowManually();
+        btnAdd.Click += (_, _) => AddRowManually();
         btnAddFromFiles.Click += (_, _) => AddFromFilesDialog();
-        btnRemove.Click       += (_, _) => RemoveSelected();
-        btnClear.Click        += (_, _) => ClearAll();
-        btnRun.Click          += async (_, _) => await RunAllAsync();
-        btnCancel.Click       += (_, _) => CancelAll();
+        btnRemove.Click += (_, _) => RemoveSelected();
+        btnClear.Click += (_, _) => ClearAll();
+        btnRun.Click += async (_, _) => await RunAllAsync();
+        btnCancel.Click += (_, _) => CancelAll();
     }
 
     // ---------- Row management ----------
@@ -129,13 +127,9 @@ public partial class BatchTab : UserControl
         };
         if (updateDlg.ShowDialog(this) != DialogResult.OK) return;
 
-        using var outDlg = new FolderBrowserDialog
-        {
-            Description = "Output folder for this job"
-        };
-        if (outDlg.ShowDialog(this) != DialogResult.OK) return;
-
-        AddJob(gameDlg.FileName, updateDlg.FileName, outDlg.SelectedPath);
+        // Output is chosen once at Run All time, so store empty for now.
+        // The grid shows "(pending)" until the batch assigns paths.
+        AddJob(gameDlg.FileName, updateDlg.FileName, "");
     }
 
     private void AddFromFilesDialog()
@@ -149,23 +143,21 @@ public partial class BatchTab : UserControl
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
 
         var files = dlg.FileNames;
-        var games   = files.Where(IsLikelyGamePkg).ToList();
+        var games = files.Where(IsLikelyGamePkg).ToList();
         var updates = files.Where(IsLikelyUpdatePkg).ToList();
 
         int pairs = Math.Min(games.Count, updates.Count);
         if (pairs == 0)
         {
             MessageBox.Show(this,
-                "Couldn't identify any Game/Update pairs in the selection.\n\n" +
+                "Couldn't identify any Game/Update pairs in the selection." + Environment.NewLine + Environment.NewLine +
                 "Filenames usually contain 'Game' and 'Update'.",
                 "Batch Add", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
-        string outputRoot = Path.Combine(AppContext.BaseDirectory, "Finished");
-
         for (int i = 0; i < pairs; i++)
-            AddJob(games[i], updates[i], outputRoot);
+            AddJob(games[i], updates[i], "");
     }
 
     private static bool IsLikelyGamePkg(string path) =>
@@ -179,10 +171,7 @@ public partial class BatchTab : UserControl
     private void AddJob(string game, string update, string output)
     {
         int id = _nextId++;
-        var jobOut = Path.Combine(output, $"Job{id}-{Path.GetFileNameWithoutExtension(game)}");
-        Directory.CreateDirectory(jobOut);
-
-        _jobs.Add(new BatchJob(id, game, update, jobOut));
+        _jobs.Add(new BatchJob(id, game, update, output));
         UpdateButtonStates();
     }
 
@@ -223,15 +212,14 @@ public partial class BatchTab : UserControl
         var pkgs = files.Where(f => f.EndsWith(".pkg", StringComparison.OrdinalIgnoreCase)).ToList();
         if (pkgs.Count == 0) return;
 
-        var games   = pkgs.Where(IsLikelyGamePkg).ToList();
+        var games = pkgs.Where(IsLikelyGamePkg).ToList();
         var updates = pkgs.Where(IsLikelyUpdatePkg).ToList();
         int pairs = Math.Min(games.Count, updates.Count);
 
         if (pairs > 0)
         {
-            var outputRoot = Path.Combine(AppContext.BaseDirectory, "Finished");
             for (int i = 0; i < pairs; i++)
-                AddJob(games[i], updates[i], outputRoot);
+                AddJob(games[i], updates[i], "");
             AppendLog($"Added {pairs} pair(s) from dropped files.");
         }
         else if (pkgs.Count == 1)
@@ -244,30 +232,105 @@ public partial class BatchTab : UserControl
         }
     }
 
+    // ---------- Output folder prompt ----------
+
+    /// <summary>
+    /// Asks the user where the batch should write its output. Returns the
+    /// chosen folder, or null if the user cancelled or picked a protected root.
+    /// </summary>
+    private string? AskForBatchOutputFolder()
+    {
+        var defaultPath = _lastBatchOutputRoot;
+        if (string.IsNullOrEmpty(defaultPath) || !Directory.Exists(defaultPath))
+            defaultPath = Path.Combine(AppContext.BaseDirectory, "Finished");
+
+        using var dlg = new FolderBrowserDialog
+        {
+            Description = "Choose where the batch output should be saved. " +
+                          "Each job will get its own subfolder inside this folder.",
+            SelectedPath = Directory.Exists(defaultPath) ? defaultPath : AppContext.BaseDirectory,
+        };
+        if (dlg.ShowDialog(this) != DialogResult.OK) return null;
+
+        var chosen = dlg.SelectedPath;
+
+        if (SafePathGuard.IsProtectedRoot(chosen))
+        {
+            var suggestion = Path.Combine(chosen, "BatchOutput");
+            MessageBox.Show(this,
+                "You chose a protected Windows folder:" + Environment.NewLine + Environment.NewLine +
+                chosen + Environment.NewLine + Environment.NewLine +
+                "This folder contains your personal files and cannot be used as " +
+                "an output location." + Environment.NewLine + Environment.NewLine +
+                "Please create a subfolder (for example, " + suggestion + ") " +
+                "and select that instead.",
+                "Batch output", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return null;
+        }
+
+        try { Directory.CreateDirectory(chosen); }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this,
+                "Cannot use that folder:" + Environment.NewLine + ex.Message,
+                "Batch output", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return null;
+        }
+
+        return chosen;
+    }
+
     // ---------- Run / Cancel ----------
 
     private async Task RunAllAsync()
     {
         if (_isRunning || _jobs.Count == 0) return;
 
-        foreach (var j in _jobs)
+        // Which jobs still need to run?
+        var pending = _jobs
+            .Where(j => j.State != BatchJobState.Completed)
+            .ToList();
+
+        if (pending.Count == 0)
         {
-            if (j.State != BatchJobState.Completed)
-            {
-                j.State = BatchJobState.Queued;
-                j.Progress = 0;
-                j.Status = "Queued";
-                j.DigestStatus = DigestStatus.Unknown;
-                j.BuiltPkgPath = "";
-            }
+            MessageBox.Show(this,
+                "All jobs in the queue have already completed." + Environment.NewLine + Environment.NewLine +
+                "Use Clear All first if you want to run them again.",
+                "Batch", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        // Ask where to save output before doing anything.
+        var outputRoot = AskForBatchOutputFolder();
+        if (outputRoot is null) return;
+
+        _lastBatchOutputRoot = outputRoot;
+
+        // Assign a per-job subfolder under the chosen root. Only touch pending
+        // jobs so a completed job's existing output path and digest survive.
+        foreach (var job in pending)
+        {
+            var folderName = $"Job{job.Id}-{Path.GetFileNameWithoutExtension(job.GamePkg)}";
+            job.OutputDir = Path.Combine(outputRoot, folderName);
+            job.BuiltPkgPath = "";
+            job.DigestStatus = DigestStatus.Unknown;
+            job.State = BatchJobState.Queued;
+            job.Progress = 0;
+            job.Status = "Queued";
         }
 
         _cts = new CancellationTokenSource();
         SetRunning(true);
         txtLog.Clear();
-        AppendLog($"Starting batch of {_jobs.Count} job(s), parallelism = {numParallel.Value}.");
 
-        var tools  = ToolLocator.Default();
+        int skipped = _jobs.Count - pending.Count;
+        if (skipped > 0)
+            AppendLog($"Skipping {skipped} already-completed job(s).");
+
+        AppendLog($"Batch output root: {outputRoot}");
+        AppendLog($"Starting batch of {pending.Count} job(s), parallelism = {numParallel.Value}.");
+
+        var tools = ToolLocator.Default();
         var runner = new BatchRunner(_runner, tools);
 
         int maxParallel = (int)numParallel.Value;
@@ -275,7 +338,7 @@ public partial class BatchTab : UserControl
         try
         {
             await Task.Run(() => runner.RunAllAsync(
-                _jobs.ToList(),
+                pending,
                 maxParallel,
                 perJobProgress: (id, report) =>
                 {
@@ -302,13 +365,40 @@ public partial class BatchTab : UserControl
         {
             SetRunning(false);
 
-            int ok  = _jobs.Count(j => j.State == BatchJobState.Completed);
+            int ok = _jobs.Count(j => j.State == BatchJobState.Completed);
             int bad = _jobs.Count(j => j.State == BatchJobState.Failed);
-            int cx  = _jobs.Count(j => j.State == BatchJobState.Cancelled);
+            int cx = _jobs.Count(j => j.State == BatchJobState.Cancelled);
             AppendLog($"Batch complete: {ok} ok, {bad} failed, {cx} cancelled.");
 
             _cts.Dispose();
             _cts = null;
+
+            if ((ok > 0 || bad > 0) && Directory.Exists(outputRoot))
+            {
+                var answer = MessageBox.Show(this,
+                    $"Batch finished: {ok} succeeded, {bad} failed, {cx} cancelled." +
+                    Environment.NewLine + Environment.NewLine +
+                    "Output folder:" + Environment.NewLine + outputRoot +
+                    Environment.NewLine + Environment.NewLine +
+                    "Open it in Explorer?",
+                    "Batch complete",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Information);
+
+                if (answer == DialogResult.Yes)
+                {
+                    try
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
+                            "explorer.exe", $"\"{outputRoot}\"")
+                        { UseShellExecute = true });
+                    }
+                    catch (Exception ex)
+                    {
+                        AppendLog("[warn] could not open output folder: " + ex.Message);
+                    }
+                }
+            }
         }
     }
 
@@ -332,13 +422,13 @@ public partial class BatchTab : UserControl
     private void UpdateButtonStates()
     {
         bool has = _jobs.Count > 0;
-        btnAdd.Enabled          = !_isRunning;
+        btnAdd.Enabled = !_isRunning;
         btnAddFromFiles.Enabled = !_isRunning;
-        btnRemove.Enabled       = !_isRunning && has;
-        btnClear.Enabled        = !_isRunning && has;
-        btnRun.Enabled          = !_isRunning && has;
-        btnCancel.Enabled       = _isRunning;
-        numParallel.Enabled     = !_isRunning;
+        btnRemove.Enabled = !_isRunning && has;
+        btnClear.Enabled = !_isRunning && has;
+        btnRun.Enabled = !_isRunning && has;
+        btnCancel.Enabled = _isRunning;
+        numParallel.Enabled = !_isRunning;
     }
 
     private void AppendLog(string line)

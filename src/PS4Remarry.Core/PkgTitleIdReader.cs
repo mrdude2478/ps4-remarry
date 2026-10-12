@@ -9,7 +9,7 @@ namespace PS4Remarry.Core;
 public static class PkgTitleIdReader
 {
     private const long TitleIdOffset = 0x47;
-    private const int  TitleIdLength = 9;
+    private const int TitleIdLength = 9;
 
     public static string ReadTitleId(string pkgPath)
     {

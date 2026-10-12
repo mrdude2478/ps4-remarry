@@ -9,12 +9,12 @@ public sealed record MergeOptions(
 public sealed class MergePipeline
 {
     private readonly ProcessRunner _runner;
-    private readonly ToolLocator  _tools;
+    private readonly ToolLocator _tools;
 
     public MergePipeline(ProcessRunner runner, ToolLocator tools)
     {
         _runner = runner;
-        _tools  = tools;
+        _tools = tools;
     }
 
     public async Task<string> RunAsync(
@@ -30,7 +30,7 @@ public sealed class MergePipeline
                 $"Refusing to run: work directory '{opts.WorkDir}' is not inside " +
                 $"the tools work folder '{_tools.WorkDir}'.");
 
-        var gameFull   = Path.GetFullPath(opts.GamePkg);
+        var gameFull = Path.GetFullPath(opts.GamePkg);
         var updateFull = Path.GetFullPath(opts.UpdatePkg);
 
         if (string.Equals(gameFull, updateFull, StringComparison.OrdinalIgnoreCase))
@@ -57,7 +57,7 @@ public sealed class MergePipeline
 
         try
         {
-            var gameUnpack   = Path.Combine(opts.WorkDir, "Game-pkg");
+            var gameUnpack = Path.Combine(opts.WorkDir, "Game-pkg");
             var updateUnpack = Path.Combine(opts.WorkDir, "Update-pkg");
             Directory.CreateDirectory(gameUnpack);
             Directory.CreateDirectory(updateUnpack);
@@ -172,7 +172,7 @@ public sealed class MergePipeline
 
     private static void MoveSc0IntoImage0(string unpackDir)
     {
-        var sc0    = Path.Combine(unpackDir, "Sc0");
+        var sc0 = Path.Combine(unpackDir, "Sc0");
         var sceSys = Path.Combine(unpackDir, "Image0", "sce_sys");
 
         if (!Directory.Exists(sc0)) return;

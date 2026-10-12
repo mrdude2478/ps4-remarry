@@ -1,8 +1,3 @@
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading;
-
 namespace PS4Remarry.Core;
 
 /// <summary>
@@ -12,11 +7,11 @@ namespace PS4Remarry.Core;
 /// </summary>
 public sealed class PkgBuildProgressMonitor : IDisposable
 {
-    private readonly string   _outputDir;
-    private readonly long     _expectedSize;
+    private readonly string _outputDir;
+    private readonly long _expectedSize;
     private readonly IProgress<ProgressReport> _progress;
     private readonly CancellationToken _ct;
-    private readonly Timer    _timer;
+    private readonly Timer _timer;
     private readonly HashSet<string> _ignoreFiles;
 
     private long _lastReportedBytes = -1;
@@ -28,11 +23,11 @@ public sealed class PkgBuildProgressMonitor : IDisposable
         CancellationToken ct,
         IEnumerable<string>? ignoreFiles = null)
     {
-        _outputDir    = outputDir;
+        _outputDir = outputDir;
         _expectedSize = expectedSize > 0 ? expectedSize : 1;
-        _progress     = progress;
-        _ct           = ct;
-        _ignoreFiles  = new HashSet<string>(
+        _progress = progress;
+        _ct = ct;
+        _ignoreFiles = new HashSet<string>(
             ignoreFiles ?? Enumerable.Empty<string>(),
             StringComparer.OrdinalIgnoreCase);
 

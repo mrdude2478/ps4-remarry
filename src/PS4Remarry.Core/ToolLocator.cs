@@ -2,21 +2,21 @@ namespace PS4Remarry.Core;
 
 public sealed class ToolLocator
 {
-    public string ToolsDir    { get; }
-    public string WorkDir     { get; }
+    public string ToolsDir { get; }
+    public string WorkDir { get; }
     public string OrbisPubCmd { get; }
     public string Gengp4Patch { get; }
-    public string Gengp4App   { get; }
-    public string ExtDir      { get; }
+    public string Gengp4App { get; }
+    public string ExtDir { get; }
 
     public ToolLocator(string toolsDir)
     {
-        ToolsDir    = Path.GetFullPath(toolsDir);
-        WorkDir     = Path.Combine(ToolsDir, "Work");
-        ExtDir      = Path.Combine(ToolsDir, "ext");
+        ToolsDir = Path.GetFullPath(toolsDir);
+        WorkDir = Path.Combine(ToolsDir, "Work");
+        ExtDir = Path.Combine(ToolsDir, "ext");
         OrbisPubCmd = Path.Combine(ToolsDir, "orbis-pub-cmd.exe");
         Gengp4Patch = Path.Combine(ToolsDir, "gengp4_patch.exe");
-        Gengp4App   = Path.Combine(ToolsDir, "gengp4_app.exe");
+        Gengp4App = Path.Combine(ToolsDir, "gengp4_app.exe");
 
         Directory.CreateDirectory(WorkDir);
     }
@@ -27,7 +27,7 @@ public sealed class ToolLocator
 
         RequireFile(OrbisPubCmd, "orbis-pub-cmd.exe", missing);
         RequireFile(Gengp4Patch, "gengp4_patch.exe", missing);
-        RequireFile(Gengp4App,   "gengp4_app.exe",   missing);
+        RequireFile(Gengp4App, "gengp4_app.exe", missing);
 
         if (!Directory.Exists(ExtDir))
         {

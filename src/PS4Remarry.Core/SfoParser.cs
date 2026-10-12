@@ -30,31 +30,51 @@ public sealed class SfoEntry
 /// </summary>
 public static class SfoParser
 {
-    private const uint PkgMagic  = 1414415231;   // "\x7FCNT" - PS4 PKG file
+    private const uint PkgMagic = 1414415231;   // "\x7FCNT" - PS4 PKG file
     private const uint DiscMagic = 1128612691;   // "SCEC"    - PS4 disc param.sfo
-    private const uint SfoMagic  = 1179865088;   // "\0PSF"   - PS4 param.sfo file
+    private const uint SfoMagic = 1179865088;   // "\0PSF"   - PS4 param.sfo file
 
-    private const uint ParamSfoEntryId   = 0x1000;
-    private const uint Icon0PngEntryId   = 0x1200;
+    private const uint ParamSfoEntryId = 0x1000;
+    private const uint Icon0PngEntryId = 0x1200;
     private const uint Icon0_00PngEntryId = 0x1201;
-    private const uint Pic0PngEntryId    = 0x1220;
-    private const uint Pic1PngEntryId    = 0x1006;
+    private const uint Pic0PngEntryId = 0x1220;
+    private const uint Pic1PngEntryId = 0x1006;
 
     private static readonly Dictionary<uint, string> KnownEntryNames = new()
     {
-        [0x00000001] = "digests", [0x00000010] = "entry_keys", [0x00000020] = "image_key",
-        [0x00000080] = "general_digests", [0x00000100] = "metas", [0x00000200] = "entry_names",
-        [0x00000400] = "license.dat", [0x00000401] = "license.info", [0x00000402] = "nptitle.dat",
-        [0x00000403] = "npbind.dat", [0x00000404] = "selfinfo.dat", [0x00000406] = "imageinfo.dat",
-        [0x00000407] = "target-deltainfo.dat", [0x00000408] = "origin-deltainfo.dat",
+        [0x00000001] = "digests",
+        [0x00000010] = "entry_keys",
+        [0x00000020] = "image_key",
+        [0x00000080] = "general_digests",
+        [0x00000100] = "metas",
+        [0x00000200] = "entry_names",
+        [0x00000400] = "license.dat",
+        [0x00000401] = "license.info",
+        [0x00000402] = "nptitle.dat",
+        [0x00000403] = "npbind.dat",
+        [0x00000404] = "selfinfo.dat",
+        [0x00000406] = "imageinfo.dat",
+        [0x00000407] = "target-deltainfo.dat",
+        [0x00000408] = "origin-deltainfo.dat",
         [0x00000409] = "psreserved.dat",
-        [ParamSfoEntryId] = "param.sfo", [0x1001] = "playgo-chunk.dat", [0x1002] = "playgo-chunk.sha",
-        [0x1003] = "playgo-manifest.xml", [0x1004] = "pronunciation.xml", [0x1005] = "pronunciation.sig",
-        [Pic1PngEntryId] = "pic1.png", [0x1007] = "pubtoolinfo.dat", [0x1008] = "app/playgo-chunk.dat",
-        [0x1009] = "app/playgo-chunk.sha", [0x100A] = "app/playgo-manifest.xml",
-        [0x100B] = "shareparam.json", [0x100C] = "shareoverlayimage.png", [0x100D] = "save_data.png",
+        [ParamSfoEntryId] = "param.sfo",
+        [0x1001] = "playgo-chunk.dat",
+        [0x1002] = "playgo-chunk.sha",
+        [0x1003] = "playgo-manifest.xml",
+        [0x1004] = "pronunciation.xml",
+        [0x1005] = "pronunciation.sig",
+        [Pic1PngEntryId] = "pic1.png",
+        [0x1007] = "pubtoolinfo.dat",
+        [0x1008] = "app/playgo-chunk.dat",
+        [0x1009] = "app/playgo-chunk.sha",
+        [0x100A] = "app/playgo-manifest.xml",
+        [0x100B] = "shareparam.json",
+        [0x100C] = "shareoverlayimage.png",
+        [0x100D] = "save_data.png",
         [0x100E] = "shareprivacyguardimage.png",
-        [Icon0PngEntryId] = "icon0.png", [Pic0PngEntryId] = "pic0.png", [0x1240] = "snd0.at9",
+        [Icon0PngEntryId] = "icon0.png",
+        [Pic0PngEntryId] = "pic0.png",
+        [0x1240] = "snd0.at9",
         [0x1280] = "icon0.dds",
     };
 

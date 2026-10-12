@@ -9,12 +9,12 @@ public sealed record RemarryOptions(
 public sealed class RemarryPipeline
 {
     private readonly ProcessRunner _runner;
-    private readonly ToolLocator  _tools;
+    private readonly ToolLocator _tools;
 
     public RemarryPipeline(ProcessRunner runner, ToolLocator tools)
     {
         _runner = runner;
-        _tools  = tools;
+        _tools = tools;
     }
 
     public async Task<string> RunAsync(
@@ -59,8 +59,8 @@ public sealed class RemarryPipeline
             var folderName = $"{titleId}-patch";
             var folderPath = Path.Combine(opts.WorkDir, folderName);
             var unpackPath = Path.Combine(opts.WorkDir, "Update-pkg");
-            var gp4Path    = Path.Combine(opts.WorkDir, folderName + ".gp4");
-            var buildDir   = Path.Combine(opts.WorkDir, "build");
+            var gp4Path = Path.Combine(opts.WorkDir, folderName + ".gp4");
+            var buildDir = Path.Combine(opts.WorkDir, "build");
 
             ct.ThrowIfCancellationRequested();
 
@@ -82,7 +82,7 @@ public sealed class RemarryPipeline
 
             progress?.Report(ProgressReport.Pct(40, "Merging Sc0 into Image0\\sce_sys..."));
             var image0 = Path.Combine(unpackPath, "Image0");
-            var sc0    = Path.Combine(unpackPath, "Sc0");
+            var sc0 = Path.Combine(unpackPath, "Sc0");
 
             if (!Directory.Exists(image0))
             {

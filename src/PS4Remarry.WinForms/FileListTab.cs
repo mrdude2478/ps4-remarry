@@ -1,5 +1,5 @@
-using System.Text;
 using PS4Remarry.Core;
+using System.Text;
 
 namespace PS4Remarry.WinForms;
 
@@ -39,17 +39,17 @@ public partial class FileListTab : UserControl
     {
         txtSourcePkg.AllowDrop = true;
         txtSourcePkg.DragEnter += PkgBox_DragEnter;
-        txtSourcePkg.DragDrop  += PkgBox_DragDrop;
+        txtSourcePkg.DragDrop += PkgBox_DragDrop;
         txtSourcePkg.TextChanged += (_, _) => UpdateButtonStates();
 
-        btnBrowsePkg.Click       += (_, _) => BrowsePkg();
-        btnLoad.Click            += async (_, _) => await LoadFileListAsync();
+        btnBrowsePkg.Click += (_, _) => BrowsePkg();
+        btnLoad.Click += async (_, _) => await LoadFileListAsync();
         btnExtractSelected.Click += async (_, _) => await ExtractSelectedAsync();
-        btnExtractAll.Click      += async (_, _) => await ExtractAllAsync();
-        btnCancel.Click          += (_, _) => CancelCurrentOperation();
+        btnExtractAll.Click += async (_, _) => await ExtractAllAsync();
+        btnCancel.Click += (_, _) => CancelCurrentOperation();
 
         treeFiles.BeforeExpand += TreeFiles_BeforeExpand;
-        treeFiles.AfterSelect  += TreeFiles_AfterSelect;
+        treeFiles.AfterSelect += TreeFiles_AfterSelect;
     }
 
     // ---------- Browsing / drag/drop ----------
@@ -449,7 +449,8 @@ public partial class FileListTab : UserControl
             if (answer == DialogResult.Yes)
             {
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
-                    "explorer.exe", $"\"{outputRoot}\"") { UseShellExecute = true });
+                    "explorer.exe", $"\"{outputRoot}\"")
+                { UseShellExecute = true });
             }
         }
         catch (OperationCanceledException)
@@ -558,22 +559,22 @@ public partial class FileListTab : UserControl
         var ext = Path.GetExtension(name).ToLowerInvariant();
         return ext switch
         {
-            ".pkg"      => "PKG package",
-            ".sfo"      => "System metadata",
-            ".png"      => "Image (PNG)",
-            ".dds"      => "Image (DDS)",
-            ".at9"      => "Audio (AT9)",
-            ".mp4"      => "Video (MP4)",
-            ".prx"      => "PS4 module",
-            ".bin"      => "Binary data",
-            ".ipak"     => "Asset pack",
+            ".pkg" => "PKG package",
+            ".sfo" => "System metadata",
+            ".png" => "Image (PNG)",
+            ".dds" => "Image (DDS)",
+            ".at9" => "Audio (AT9)",
+            ".mp4" => "Video (MP4)",
+            ".prx" => "PS4 module",
+            ".bin" => "Binary data",
+            ".ipak" => "Asset pack",
             ".manifest" => "Manifest",
-            ".dat"      => "Data file",
-            ".lua"      => "Lua script",
-            ".xml"      => "XML data",
-            ".json"     => "JSON data",
-            ".trp"      => "Trophy data",
-            _           => "File"
+            ".dat" => "Data file",
+            ".lua" => "Lua script",
+            ".xml" => "XML data",
+            ".json" => "JSON data",
+            ".trp" => "Trophy data",
+            _ => "File"
         };
     }
 
@@ -585,12 +586,12 @@ public partial class FileListTab : UserControl
         _cts = new CancellationTokenSource();
         _lastLoggedLine = null;
 
-        btnBrowsePkg.Enabled       = false;
-        btnLoad.Enabled            = false;
+        btnBrowsePkg.Enabled = false;
+        btnLoad.Enabled = false;
         btnExtractSelected.Enabled = false;
-        btnExtractAll.Enabled      = false;
-        btnCancel.Enabled          = true;
-        txtSourcePkg.Enabled       = false;
+        btnExtractAll.Enabled = false;
+        btnCancel.Enabled = true;
+        txtSourcePkg.Enabled = false;
     }
 
     private void EndOperation()
@@ -599,8 +600,8 @@ public partial class FileListTab : UserControl
         if (_cts is not null) { _cts.Dispose(); _cts = null; }
 
         btnBrowsePkg.Enabled = true;
-        btnLoad.Enabled      = true;
-        btnCancel.Enabled    = false;
+        btnLoad.Enabled = true;
+        btnCancel.Enabled = false;
         txtSourcePkg.Enabled = true;
         UpdateButtonStates();
 

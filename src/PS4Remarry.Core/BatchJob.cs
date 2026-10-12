@@ -25,7 +25,28 @@ public sealed class BatchJob : INotifyPropertyChanged
     public int Id { get; }
     public string GamePkg { get; }
     public string UpdatePkg { get; }
-    public string OutputDir { get; }
+
+    private string _outputDir = "";
+    public string OutputDir
+    {
+        get => _outputDir;
+        set
+        {
+            if (_outputDir != value)
+            {
+                _outputDir = value ?? "";
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(OutputDisplay));
+            }
+        }
+    }
+
+    /// <summary>
+    /// What the grid shows in the Output column. Shows "(pending)" until
+    /// the batch assigns a real path.
+    /// </summary>
+    public string OutputDisplay =>
+        string.IsNullOrEmpty(_outputDir) ? "(pending)" : _outputDir;
 
     private BatchJobState _state = BatchJobState.Queued;
     public BatchJobState State
@@ -83,10 +104,10 @@ public sealed class BatchJob : INotifyPropertyChanged
 
     public string DigestText => DigestStatus switch
     {
-        DigestStatus.Match      => "✓ Match",
-        DigestStatus.Mismatch   => "✗ Mismatch",
+        DigestStatus.Match => "✓ Match",
+        DigestStatus.Mismatch => "✗ Mismatch",
         DigestStatus.Unreadable => "? Unreadable",
-        _                       => "",
+        _ => "",
     };
 
     public int DigestColorArgb
@@ -95,18 +116,18 @@ public sealed class BatchJob : INotifyPropertyChanged
         {
             switch (DigestStatus)
             {
-                case DigestStatus.Match:      return unchecked((int)0xFF008000);
-                case DigestStatus.Mismatch:   return unchecked((int)0xFFC00000);
+                case DigestStatus.Match: return unchecked((int)0xFF008000);
+                case DigestStatus.Mismatch: return unchecked((int)0xFFC00000);
                 case DigestStatus.Unreadable: return unchecked((int)0xFF806000);
-                default:                      return unchecked((int)0xFF000000);
+                default: return unchecked((int)0xFF000000);
             }
         }
     }
 
     public BatchJob(int id, string gamePkg, string updatePkg, string outputDir)
     {
-        Id        = id;
-        GamePkg   = gamePkg;
+        Id = id;
+        GamePkg = gamePkg;
         UpdatePkg = updatePkg;
         OutputDir = outputDir;
     }

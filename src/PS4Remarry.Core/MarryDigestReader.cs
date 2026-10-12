@@ -1,5 +1,4 @@
 using System.Buffers.Binary;
-using System.IO;
 
 namespace PS4Remarry.Core;
 
@@ -23,9 +22,9 @@ public static class MarryDigestReader
 
     // Header field offsets, all read big-endian (Java's MappedByteBuffer
     // default byte order, which the original code relies on).
-    private const int OffsetEntryCount   = 0x10;
-    private const int OffsetTableOffset  = 0x18;
-    private const int OffsetContentType  = 0x74;
+    private const int OffsetEntryCount = 0x10;
+    private const int OffsetTableOffset = 0x18;
+    private const int OffsetContentType = 0x74;
     private const int OffsetContentFlags = 0x78;
 
     public static string GetChecksum(string pkgPath)
@@ -64,7 +63,7 @@ public static class MarryDigestReader
             {
                 case 0x0A000000u: targetId = 0x1001; break; // application (base game)
                 case 0x02000000u: targetId = 0x1008; break; // additional content (DLC)
-                default:          return "-";
+                default: return "-";
             }
 
             // 4. Read the digest_table offset (big-endian) at tableOffset + 16.

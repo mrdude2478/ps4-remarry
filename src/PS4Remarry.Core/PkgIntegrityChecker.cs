@@ -6,11 +6,11 @@ public sealed record IntegrityItem(IntegrityLevel Level, string Message);
 
 public sealed record IntegrityReport(IReadOnlyList<IntegrityItem> Items)
 {
-    public bool HasErrors   => Items.Any(i => i.Level == IntegrityLevel.Error);
+    public bool HasErrors => Items.Any(i => i.Level == IntegrityLevel.Error);
     public bool HasWarnings => Items.Any(i => i.Level == IntegrityLevel.Warn);
-    public int  ErrorCount  => Items.Count(i => i.Level == IntegrityLevel.Error);
-    public int  WarnCount   => Items.Count(i => i.Level == IntegrityLevel.Warn);
-    public int  OkCount     => Items.Count(i => i.Level == IntegrityLevel.Ok);
+    public int ErrorCount => Items.Count(i => i.Level == IntegrityLevel.Error);
+    public int WarnCount => Items.Count(i => i.Level == IntegrityLevel.Warn);
+    public int OkCount => Items.Count(i => i.Level == IntegrityLevel.Ok);
 }
 
 /// <summary>
@@ -30,14 +30,14 @@ public static class PkgIntegrityChecker
         }
 
         var folderName = new DirectoryInfo(extractFolder).Name;
-        var sceSys     = Path.Combine(extractFolder, "sce_sys");
-        var paramSfo   = Path.Combine(sceSys, "param.sfo");
-        var icon0      = Path.Combine(sceSys, "icon0.png");
-        var keystone   = Path.Combine(sceSys, "keystone");
-        var eboot      = Path.Combine(extractFolder, "eboot.bin");
-        var sceModule  = Path.Combine(extractFolder, "sce_module");
-        var sc0        = Path.Combine(extractFolder, "Sc0");
-        var nestedImg  = Path.Combine(extractFolder, "Image0");
+        var sceSys = Path.Combine(extractFolder, "sce_sys");
+        var paramSfo = Path.Combine(sceSys, "param.sfo");
+        var icon0 = Path.Combine(sceSys, "icon0.png");
+        var keystone = Path.Combine(sceSys, "keystone");
+        var eboot = Path.Combine(extractFolder, "eboot.bin");
+        var sceModule = Path.Combine(extractFolder, "sce_module");
+        var sc0 = Path.Combine(extractFolder, "Sc0");
+        var nestedImg = Path.Combine(extractFolder, "Image0");
 
         // ---- 1. sce_sys/param.sfo ----
         Dictionary<string, string>? sfo = null;

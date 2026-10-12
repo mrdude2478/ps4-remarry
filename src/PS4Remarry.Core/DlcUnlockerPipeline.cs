@@ -17,12 +17,12 @@ public sealed record DlcUnlockerResult(
 public sealed class DlcUnlockerPipeline
 {
     private readonly ProcessRunner _runner;
-    private readonly ToolLocator  _tools;
+    private readonly ToolLocator _tools;
 
     public DlcUnlockerPipeline(ProcessRunner runner, ToolLocator tools)
     {
         _runner = runner;
-        _tools  = tools;
+        _tools = tools;
     }
 
     public async Task<DlcUnlockerResult> RunAsync(
@@ -50,7 +50,7 @@ public sealed class DlcUnlockerPipeline
 
         // ---- Validate inputs ----
         var contentId = (opts.ContentId ?? "").Trim();
-        var title     = (opts.Title ?? "").Trim();
+        var title = (opts.Title ?? "").Trim();
 
         if (string.IsNullOrEmpty(contentId))
             return new DlcUnlockerResult(false, "Content ID is required.", null);
@@ -183,8 +183,8 @@ public sealed class DlcUnlockerPipeline
     private static void WriteGp4(string path, string workDir, string contentId, bool hasIcon)
     {
         var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-        var sfoPath   = Path.Combine(workDir, "sce_sys", "param.sfo");
-        var iconPath  = Path.Combine(workDir, "sce_sys", "icon0.png");
+        var sfoPath = Path.Combine(workDir, "sce_sys", "param.sfo");
+        var iconPath = Path.Combine(workDir, "sce_sys", "icon0.png");
 
         var sb = new StringBuilder();
         sb.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>");

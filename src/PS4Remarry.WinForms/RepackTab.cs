@@ -19,19 +19,19 @@ public partial class RepackTab : UserControl
     private void WireEvents()
     {
         txtSourcePkg.DragEnter += PkgBox_DragEnter;
-        txtSourcePkg.DragDrop  += PkgBox_DragDrop;
+        txtSourcePkg.DragDrop += PkgBox_DragDrop;
         txtSourcePkg.TextChanged += (_, _) => UpdateButtonStates();
 
         txtExtractFolder.TextChanged += (_, _) => UpdateButtonStates();
 
-        btnBrowsePkg.Click     += (_, _) => BrowsePkg();
+        btnBrowsePkg.Click += (_, _) => BrowsePkg();
         btnBrowseExtract.Click += (_, _) => BrowseExtractFolder();
-        btnExtract.Click       += async (_, _) => await ExtractAsync();
-        btnOpenFolder.Click    += (_, _) => OpenExtractFolder();
-        btnCheck.Click         += (_, _) => RunIntegrityCheck();
-        btnRepack.Click        += async (_, _) => await RepackAsync();
-        btnCleanFolder.Click   += (_, _) => CleanExtractFolder();
-        btnCancel.Click        += (_, _) => CancelCurrentOperation();
+        btnExtract.Click += async (_, _) => await ExtractAsync();
+        btnOpenFolder.Click += (_, _) => OpenExtractFolder();
+        btnCheck.Click += (_, _) => RunIntegrityCheck();
+        btnRepack.Click += async (_, _) => await RepackAsync();
+        btnCleanFolder.Click += (_, _) => CleanExtractFolder();
+        btnCancel.Click += (_, _) => CancelCurrentOperation();
     }
 
     private void BrowsePkg()
@@ -49,7 +49,7 @@ public partial class RepackTab : UserControl
         if (string.IsNullOrWhiteSpace(txtExtractFolder.Text))
         {
             var stem = Path.GetFileNameWithoutExtension(dlg.FileName);
-            var dir  = Path.GetDirectoryName(dlg.FileName) ?? AppContext.BaseDirectory;
+            var dir = Path.GetDirectoryName(dlg.FileName) ?? AppContext.BaseDirectory;
             txtExtractFolder.Text = Path.Combine(dir, stem + "_extracted");
         }
     }
@@ -106,7 +106,7 @@ public partial class RepackTab : UserControl
         if (string.IsNullOrWhiteSpace(txtExtractFolder.Text))
         {
             var stem = Path.GetFileNameWithoutExtension(pkg);
-            var dir  = Path.GetDirectoryName(pkg) ?? AppContext.BaseDirectory;
+            var dir = Path.GetDirectoryName(pkg) ?? AppContext.BaseDirectory;
             txtExtractFolder.Text = Path.Combine(dir, stem + "_extracted");
         }
 
@@ -119,7 +119,7 @@ public partial class RepackTab : UserControl
     {
         if (_isBusy) return;
 
-        var source  = txtSourcePkg.Text.Trim();
+        var source = txtSourcePkg.Text.Trim();
         var extract = txtExtractFolder.Text.Trim();
 
         if (!File.Exists(source)) { Warn("Source PKG not found."); return; }
@@ -217,10 +217,10 @@ public partial class RepackTab : UserControl
         {
             var prefix = item.Level switch
             {
-                IntegrityLevel.Ok    => "[  ok  ]",
-                IntegrityLevel.Warn  => "[ warn ]",
+                IntegrityLevel.Ok => "[  ok  ]",
+                IntegrityLevel.Warn => "[ warn ]",
                 IntegrityLevel.Error => "[ERROR ]",
-                _                    => "[      ]",
+                _ => "[      ]",
             };
             AppendLog($"{prefix} {item.Message}");
         }
@@ -370,10 +370,10 @@ public partial class RepackTab : UserControl
         {
             var prefix = item.Level switch
             {
-                IntegrityLevel.Ok    => "[  ok  ]",
-                IntegrityLevel.Warn  => "[ warn ]",
+                IntegrityLevel.Ok => "[  ok  ]",
+                IntegrityLevel.Warn => "[ warn ]",
                 IntegrityLevel.Error => "[ERROR ]",
-                _                    => "[      ]",
+                _ => "[      ]",
             };
             AppendLog($"{prefix} {item.Message}");
         }
@@ -404,7 +404,8 @@ public partial class RepackTab : UserControl
         var extract = txtExtractFolder.Text.Trim();
         if (!Directory.Exists(extract)) { Warn("Extract folder not found."); return; }
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
-            "explorer.exe", $"\"{extract}\"") { UseShellExecute = true });
+            "explorer.exe", $"\"{extract}\"")
+        { UseShellExecute = true });
     }
 
     private void CleanExtractFolder()
@@ -470,14 +471,14 @@ public partial class RepackTab : UserControl
         _cts = new CancellationTokenSource();
         _lastLoggedLine = null;
 
-        btnBrowsePkg.Enabled     = false;
+        btnBrowsePkg.Enabled = false;
         btnBrowseExtract.Enabled = false;
-        btnExtract.Enabled       = false;
-        btnOpenFolder.Enabled    = false;
-        btnCheck.Enabled         = false;
-        btnRepack.Enabled        = false;
-        btnCleanFolder.Enabled   = false;
-        btnCancel.Enabled        = true;
+        btnExtract.Enabled = false;
+        btnOpenFolder.Enabled = false;
+        btnCheck.Enabled = false;
+        btnRepack.Enabled = false;
+        btnCleanFolder.Enabled = false;
+        btnCancel.Enabled = true;
     }
 
     private void EndOperation()
@@ -485,9 +486,9 @@ public partial class RepackTab : UserControl
         _isBusy = false;
         if (_cts is not null) { _cts.Dispose(); _cts = null; }
 
-        btnBrowsePkg.Enabled     = true;
+        btnBrowsePkg.Enabled = true;
         btnBrowseExtract.Enabled = true;
-        btnCancel.Enabled        = false;
+        btnCancel.Enabled = false;
         UpdateButtonStates();
     }
 
@@ -505,16 +506,16 @@ public partial class RepackTab : UserControl
     {
         if (_isBusy) return;
 
-        bool hasSource       = File.Exists(txtSourcePkg.Text.Trim());
-        bool hasExtract      = !string.IsNullOrWhiteSpace(txtExtractFolder.Text.Trim());
-        bool extractExists   = hasExtract && Directory.Exists(txtExtractFolder.Text.Trim());
+        bool hasSource = File.Exists(txtSourcePkg.Text.Trim());
+        bool hasExtract = !string.IsNullOrWhiteSpace(txtExtractFolder.Text.Trim());
+        bool extractExists = hasExtract && Directory.Exists(txtExtractFolder.Text.Trim());
         bool extractHasParam = extractExists &&
             File.Exists(Path.Combine(txtExtractFolder.Text.Trim(), "sce_sys", "param.sfo"));
 
-        btnExtract.Enabled     = hasSource && hasExtract;
-        btnOpenFolder.Enabled  = extractExists;
-        btnCheck.Enabled       = extractExists;
-        btnRepack.Enabled      = extractHasParam;
+        btnExtract.Enabled = hasSource && hasExtract;
+        btnOpenFolder.Enabled = extractExists;
+        btnCheck.Enabled = extractExists;
+        btnRepack.Enabled = extractHasParam;
         btnCleanFolder.Enabled = extractExists;
     }
 

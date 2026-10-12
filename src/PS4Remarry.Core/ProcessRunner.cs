@@ -47,14 +47,14 @@ public sealed class ProcessRunner
 
         var psi = new ProcessStartInfo
         {
-            FileName               = exe,
-            WorkingDirectory       = workingDir,
-            UseShellExecute        = false,
+            FileName = exe,
+            WorkingDirectory = workingDir,
+            UseShellExecute = false,
             RedirectStandardOutput = true,
-            RedirectStandardError  = true,
-            CreateNoWindow         = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
             StandardOutputEncoding = Encoding.UTF8,
-            StandardErrorEncoding  = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
         };
         foreach (var a in args) psi.ArgumentList.Add(a);
 
@@ -77,7 +77,7 @@ public sealed class ProcessRunner
         });
 
         var stdoutTask = PumpStreamAsync(p.StandardOutput, progress, ct);
-        var stderrTask = PumpStreamAsync(p.StandardError,  progress, ct);
+        var stderrTask = PumpStreamAsync(p.StandardError, progress, ct);
 
         var exitCode = await tcs.Task.ConfigureAwait(false);
 
@@ -130,7 +130,7 @@ public sealed class ProcessRunner
         CancellationToken ct)
     {
         var buffer = new char[1024];
-        var line   = new StringBuilder(128);
+        var line = new StringBuilder(128);
 
         while (true)
         {

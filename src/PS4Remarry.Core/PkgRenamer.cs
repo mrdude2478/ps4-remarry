@@ -44,9 +44,9 @@ public static class PkgRenamer
                         ? id
                         : TryReadTitleIdFromHeader(pkgPath);
 
-        string appVer   = sfo.TryGetValue("APP_VER",  out var av) ? av : "";
-        string version  = sfo.TryGetValue("VERSION",  out var v)  ? v  : "";
-        string category = sfo.TryGetValue("CATEGORY", out var c)  ? c  : "";
+        string appVer = sfo.TryGetValue("APP_VER", out var av) ? av : "";
+        string version = sfo.TryGetValue("VERSION", out var v) ? v : "";
+        string category = sfo.TryGetValue("CATEGORY", out var c) ? c : "";
 
         if (string.IsNullOrWhiteSpace(titleId))
             return new RenameResult(false, pkgPath, pkgPath,
@@ -55,7 +55,7 @@ public static class PkgRenamer
         string label = CategoryToLabel(category);
         string safeTitle = SanitizeForFilename(title);
 
-        string appVerClean  = StripLeading(appVer,  'A');
+        string appVerClean = StripLeading(appVer, 'A');
         string versionClean = StripLeading(version, 'V');
 
         var sb = new StringBuilder();
@@ -108,14 +108,14 @@ public static class PkgRenamer
     {
         return category?.ToLowerInvariant() switch
         {
-            "gd"        => "Game",
-            "gp"        => "Update",
-            "gde"       => "DLC",
-            "gdk"       => "DLC",
-            "gda"       => "DLC",
-            "ac"        => "DLC",
-            null or ""  => "PKG",
-            _           => category
+            "gd" => "Game",
+            "gp" => "Update",
+            "gde" => "DLC",
+            "gdk" => "DLC",
+            "gda" => "DLC",
+            "ac" => "DLC",
+            null or "" => "PKG",
+            _ => category
         };
     }
 
@@ -144,7 +144,10 @@ public static class PkgRenamer
 
             switch (ch)
             {
-                case '®': case '©': case '™': case '℠':
+                case '®':
+                case '©':
+                case '™':
+                case '℠':
                     continue;
             }
 
@@ -181,9 +184,9 @@ public static class PkgRenamer
     {
         if (!File.Exists(desiredPath)) return desiredPath;
 
-        var dir  = Path.GetDirectoryName(desiredPath) ?? ".";
+        var dir = Path.GetDirectoryName(desiredPath) ?? ".";
         var stem = Path.GetFileNameWithoutExtension(desiredPath);
-        var ext  = Path.GetExtension(desiredPath);
+        var ext = Path.GetExtension(desiredPath);
 
         for (int i = 1; i < 1000; i++)
         {

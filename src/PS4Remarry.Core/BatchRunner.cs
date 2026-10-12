@@ -8,12 +8,12 @@ namespace PS4Remarry.Core;
 public sealed class BatchRunner
 {
     private readonly ProcessRunner _runner;
-    private readonly ToolLocator  _tools;
+    private readonly ToolLocator _tools;
 
     public BatchRunner(ProcessRunner runner, ToolLocator tools)
     {
         _runner = runner;
-        _tools  = tools;
+        _tools = tools;
     }
 
     public async Task RunAllAsync(
@@ -105,7 +105,7 @@ public sealed class BatchRunner
             try
             {
                 var gameDigest = MarryDigestReader.GetChecksum(job.GamePkg);
-                var outDigest  = MarryDigestReader.GetChecksum(newPkg);
+                var outDigest = MarryDigestReader.GetChecksum(newPkg);
 
                 if (gameDigest == "-" || outDigest == "-")
                 {

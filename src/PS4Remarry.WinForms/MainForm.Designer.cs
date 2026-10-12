@@ -55,12 +55,11 @@ partial class MainForm
 
     private void InitializeComponent()
     {
+        System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
         tabControl = new TabControl();
         tabSingle = new TabPage();
         lblGame = new Label();
         txtGame = new TextBox();
-        tabDlc = new TabPage();
-        dlcTab = new DlcTab();
         btnBrowseGame = new Button();
         btnRenameGame = new Button();
         lblUpdate = new Label();
@@ -85,6 +84,8 @@ partial class MainForm
         verifyTab = new VerifyTab();
         tabRepack = new TabPage();
         repackTab = new RepackTab();
+        tabDlc = new TabPage();
+        dlcTab = new DlcTab();
         tabFileList = new TabPage();
         fileListTab = new FileListTab();
         statusStrip = new StatusStrip();
@@ -94,8 +95,8 @@ partial class MainForm
         tabBatch.SuspendLayout();
         tabVerify.SuspendLayout();
         tabRepack.SuspendLayout();
-        tabFileList.SuspendLayout();
         tabDlc.SuspendLayout();
+        tabFileList.SuspendLayout();
         statusStrip.SuspendLayout();
         SuspendLayout();
         // 
@@ -348,6 +349,7 @@ partial class MainForm
         txtLog.Multiline = true;
         txtLog.Name = "txtLog";
         txtLog.ReadOnly = true;
+        txtLog.ScrollBars = ScrollBars.Vertical;
         txtLog.Size = new Size(790, 293);
         txtLog.TabIndex = 18;
         // 
@@ -411,6 +413,25 @@ partial class MainForm
         repackTab.Size = new Size(797, 485);
         repackTab.TabIndex = 0;
         // 
+        // tabDlc
+        // 
+        tabDlc.Controls.Add(dlcTab);
+        tabDlc.Location = new Point(4, 24);
+        tabDlc.Name = "tabDlc";
+        tabDlc.Padding = new Padding(3);
+        tabDlc.Size = new Size(803, 491);
+        tabDlc.TabIndex = 5;
+        tabDlc.Text = "DLC";
+        tabDlc.UseVisualStyleBackColor = true;
+        // 
+        // dlcTab
+        // 
+        dlcTab.Dock = DockStyle.Fill;
+        dlcTab.Location = new Point(3, 3);
+        dlcTab.Name = "dlcTab";
+        dlcTab.Size = new Size(797, 485);
+        dlcTab.TabIndex = 0;
+        // 
         // tabFileList
         // 
         tabFileList.Controls.Add(fileListTab);
@@ -429,26 +450,6 @@ partial class MainForm
         fileListTab.Name = "fileListTab";
         fileListTab.Size = new Size(797, 485);
         fileListTab.TabIndex = 0;
-        // 
-// tabDlc
-// 
-tabDlc.Controls.Add(dlcTab);
-tabDlc.Location = new Point(4, 24);
-tabDlc.Name = "tabDlc";
-tabDlc.Padding = new Padding(3);
-tabDlc.Size = new Size(736, 491);
-tabDlc.TabIndex = 5;
-tabDlc.Text = "DLC";
-tabDlc.UseVisualStyleBackColor = true;
-
-// 
-// dlcTab
-// 
-dlcTab.Dock = DockStyle.Fill;
-dlcTab.Location = new Point(3, 3);
-dlcTab.Name = "dlcTab";
-dlcTab.Size = new Size(730, 485);
-dlcTab.TabIndex = 0;
         // 
         // statusStrip
         // 
@@ -472,6 +473,7 @@ dlcTab.TabIndex = 0;
         Controls.Add(tabControl);
         Controls.Add(statusStrip);
         FormBorderStyle = FormBorderStyle.FixedSingle;
+        Icon = (Icon)resources.GetObject("$this.Icon");
         MaximizeBox = false;
         MinimumSize = new Size(760, 580);
         Name = "MainForm";
@@ -483,8 +485,8 @@ dlcTab.TabIndex = 0;
         tabBatch.ResumeLayout(false);
         tabVerify.ResumeLayout(false);
         tabRepack.ResumeLayout(false);
-        tabFileList.ResumeLayout(false);
         tabDlc.ResumeLayout(false);
+        tabFileList.ResumeLayout(false);
         statusStrip.ResumeLayout(false);
         statusStrip.PerformLayout();
         ResumeLayout(false);
