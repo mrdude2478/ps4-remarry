@@ -3,20 +3,20 @@ name: Build PS4 Remarry
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch: # Allows you to run it manually
+  workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
 
 jobs:
   build:
-    runs-on: windows-latest # Needed for WinForms and net10.0-windows
+    runs-on: windows-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
-        dotnet-version: '10.0.x' # Match your project's target framework
+        dotnet-version: '10.0.x'
 
     - name: Restore dependencies
       run: dotnet restore PS4Remarry.sln
@@ -31,8 +31,17 @@ jobs:
           --output publish `
           --self-contained false
 
+    - name: Copy tools folder to publish directory
+      run: |
+        if (Test-Path "tools") {
+          Copy-Item -Path "tools" -Destination "publish/tools" -Recurse -Force
+          Write-Host "Copied tools folder to publish directory"
+        } else {
+          Write-Host "Warning: tools folder not found in repository root"
+        }
+
     - name: Upload Build Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: PS4Remarry-Executable
-        path: publish/ # This uploads the entire published output folder
+        path: publish/
