@@ -2,7 +2,7 @@
 
 A Windows GUI tool for working with PS4 PKG files — specifically for **remarrying**, **merging**, **repacking**, and **verifying** fake PKG (FPKG) packages. Built for jailbroken PS4 consoles running GoldHEN or similar.
 
-This is a modern replacement for the batch-script workflow that's been passed around the PS4 scene for years. It keeps the proven external tools (`orbis-pub-cmd.exe`, `gengp4_patch.exe`, `gengp4_app.exe`) but wraps them in a proper application with live progress, verification, parallel batch processing, and safety guards around every destructive operation.
+This is a modern replacement for the batch-script workflow that's been passed around the PS4 scene for years. It keeps the proven external tools (`orbis-pub-cmd.exe`, `gengp4_patch.exe`, `gengp4_app.exe`) but wraps them in a proper application with live progress, verification, parallel batch processing, and safety guards around every destructive operation. If using a build from the Actions tab, make sure to make a blank file called ".ps4remarry-trusted" inside the tools folder or you will get a tools error when trying to run the build.
 
 ---
 
