@@ -27,37 +27,22 @@ public sealed record RepackInspection(
 
 /// <summary>
 /// Extracts a PS4 PKG into a folder ready for modification and repacking,
-/// and rebuilds a new PKG from that folder. Games and updates only.
-///
-/// For updates (CATEGORY=gp), three fixes are applied to the GP4 produced
-/// by gengp4_patch.exe before img_create runs:
-///   1. volume_type is changed from pkg_ps4_app to pkg_ps4_patch.
-///   2. storage_type is changed from digital50 to digital25.
-///   3. app_path is added, pointing at the base game PKG.
-///
-/// The original param.sfo is backed up during extraction and restored
-/// after GP4 generation, because gengp4_patch.exe rewrites APP_VER and
-/// VERSION inside it.
-///
-/// These fixes mean the pipeline works with stock, unpatched SDK tools.
+/// and rebuilds a new PKG from that folder. Handles games, updates, and
+/// data DLC. Nodata DLC (unlock keys) can be extracted but not rebuilt.
 /// </summary>
 public sealed class RepackPipeline
 {
     private readonly ProcessRunner _runner;
-    private readonly ToolLocator _tools;
+    private readonly ToolLocator  _tools;
 
     private const string ParamSfoBackupSuffix = ".ps4repack.param.sfo.bak";
 
     public RepackPipeline(ProcessRunner runner, ToolLocator tools)
     {
         _runner = runner;
-        _tools = tools;
+        _tools  = tools;
     }
 
-    /// <summary>
-    /// Path to the param.sfo backup that sits next to the extract folder.
-    /// Public so the UI can clean it up when the extract folder is deleted.
-    /// </summary>
     public static string GetParamSfoBackupPath(string extractFolder)
     {
         var trimmed = extractFolder.TrimEnd(
@@ -65,25 +50,10 @@ public sealed class RepackPipeline
         return trimmed + ParamSfoBackupSuffix;
     }
 
-    /// <summary>
-    /// Returns every file that this pipeline may have created outside the
-    /// extract folder for a given extraction. Currently that's the param.sfo
-    /// backup and any .gp4 file that gengp4_patch.exe wrote next to the
-    /// extract folder.
-    ///
-    /// The GP4 name may not match the extract folder's name exactly —
-    /// gengp4_patch.exe truncates long filenames — so we scan the parent
-    /// folder for .gp4 files whose name is either equal to the extract
-    /// folder name or a prefix of it (or vice versa).
-    /// </summary>
     public static IEnumerable<string> GetOrphanedFiles(string extractFolder)
     {
-        // The param.sfo backup has a deterministic name we control.
         yield return GetParamSfoBackupPath(extractFolder);
 
-        // The GP4 is written by the tool next to the extract folder. Its
-        // name may be truncated, so scan the parent folder instead of
-        // trying to compute the exact path.
         var trimmed = extractFolder.TrimEnd(
             Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         var folderName = Path.GetFileName(trimmed);
@@ -100,11 +70,6 @@ public sealed class RepackPipeline
         }
     }
 
-    /// <summary>
-    /// Returns true if two filenames (without extension) refer to the same
-    /// extraction, allowing for truncation by the tool that wrote the GP4.
-    /// A matches B if either is a prefix of the other.
-    /// </summary>
     private static bool NamesRelate(string a, string b)
     {
         if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b)) return false;
@@ -134,7 +99,7 @@ public sealed class RepackPipeline
         {
             var sfo = SfoParser.ParseToDictionary(full);
             if (sfo.TryGetValue("CONTENT_ID", out var cid)) contentId = cid.Trim();
-            if (sfo.TryGetValue("CATEGORY", out var cat)) category = cat.Trim();
+            if (sfo.TryGetValue("CATEGORY",   out var cat)) category  = cat.Trim();
         }
         catch (SfoParseException) { }
 
@@ -147,14 +112,14 @@ public sealed class RepackPipeline
     {
         return category?.ToLowerInvariant() switch
         {
-            "gd" => ("Base game (Game Data)", true),
-            "gp" => ("Update (Game Patch)", false),
-            "gde" => ("DLC (Game Data Ext)", false),
-            "gdk" => ("DLC (Game Data K)", false),
-            "gda" => ("DLC (Game Data A)", false),
-            "ac" => ("Additional Content", false),
-            "" => ("Unknown (no CATEGORY in SFO)", false),
-            _ => ($"Unknown category '{category}'", false),
+            "gd"  => ("Base game (Game Data)",              true),
+            "gp"  => ("Update (Game Patch)",                false),
+            "gde" => ("DLC (Game Data Ext)",                false),
+            "gdk" => ("DLC (Game Data K)",                  false),
+            "gda" => ("DLC (Game Data A)",                  false),
+            "ac"  => ("Additional Content",                 false),
+            ""    => ("Unknown (no CATEGORY in SFO)",       false),
+            _     => ($"Unknown category '{category}'",     false),
         };
     }
 
@@ -177,6 +142,10 @@ public sealed class RepackPipeline
             throw new FileNotFoundException("Source PKG not found.", sourceFull);
 
         var extractFull = Path.GetFullPath(opts.ExtractFolder);
+
+        // SAFETY: track whether we created the extract folder. This is what
+        // decides whether we're allowed to delete it on failure.
+        bool weCreatedExtractFolder = !Directory.Exists(extractFull);
 
         if (Directory.Exists(extractFull) &&
             Directory.EnumerateFileSystemEntries(extractFull).Any())
@@ -225,41 +194,81 @@ public sealed class RepackPipeline
 
             ct.ThrowIfCancellationRequested();
 
-            progress?.Report(ProgressReport.Pct(50, "Merging Sc0 into Image0\\sce_sys..."));
+            progress?.Report(ProgressReport.Pct(50, "Normalising extract layout..."));
+
             var image0 = Path.Combine(tempExtract, "Image0");
-            var sc0 = Path.Combine(tempExtract, "Sc0");
+            var sc0    = Path.Combine(tempExtract, "Sc0");
 
-            if (!Directory.Exists(image0))
-                throw new DirectoryNotFoundException(
-                    $"Expected '{image0}' after extraction — PKG layout unexpected.");
-
-            if (Directory.Exists(sc0))
+            if (Directory.Exists(image0))
             {
-                var sceSys = Path.Combine(image0, "sce_sys");
-                Directory.CreateDirectory(sceSys);
-                FileSystemUtil.CopyDirectory(sc0, sceSys);
-                FileSystemUtil.TryDeleteDirectory(sc0);
+                // Normal game/update/data-DLC layout: Image0 exists.
+                // Merge Sc0 into Image0\sce_sys, then delete Sc0.
+                if (Directory.Exists(sc0))
+                {
+                    var sceSys = Path.Combine(image0, "sce_sys");
+                    Directory.CreateDirectory(sceSys);
+                    FileSystemUtil.CopyDirectory(sc0, sceSys);
+                    FileSystemUtil.TryDeleteDirectory(sc0);
+                }
+            }
+            else if (Directory.Exists(sc0))
+            {
+                // Nodata DLC or unusual layout: no Image0, but Sc0 exists.
+                // Promote Sc0 to be our Image0 so the rest of the pipeline
+                // sees a consistent structure.
+                progress?.Report(ProgressReport.Log(
+                    "[repack] no Image0 folder — promoting Sc0 to Image0."));
+                Directory.Move(sc0, image0);
+            }
+            else
+            {
+                // Neither folder. Some PKGs (especially very simple DLC
+                // unlock keys) dump their contents straight into the extract
+                // root. Move those into a synthesised Image0.
+                progress?.Report(ProgressReport.Log(
+                    "[repack] neither Image0 nor Sc0 found — " +
+                    "moving extract root contents into Image0."));
+                Directory.CreateDirectory(image0);
+
+                foreach (var entry in Directory.EnumerateFileSystemEntries(tempExtract))
+                {
+                    var name = Path.GetFileName(entry);
+                    if (name.Equals("Image0", StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    var target = Path.Combine(image0, name);
+                    if (Directory.Exists(entry))
+                        Directory.Move(entry, target);
+                    else
+                        File.Move(entry, target);
+                }
             }
 
             ct.ThrowIfCancellationRequested();
 
             progress?.Report(ProgressReport.Pct(70, "Moving contents into place..."));
+
+            if (!Directory.Exists(image0))
+                throw new DirectoryNotFoundException(
+                    $"Extraction produced no usable content. " +
+                    $"Expected '{image0}' after layout normalisation.");
+
             MoveDirectoryContents(image0, extractFull);
             FileSystemUtil.TryDeleteDirectory(tempExtract);
 
-            var sceSysPath = Path.Combine(extractFull, "sce_sys");
+            var sceSysPath   = Path.Combine(extractFull, "sce_sys");
             var paramSfoPath = Path.Combine(sceSysPath, "param.sfo");
-            var icon0Path = Path.Combine(sceSysPath, "icon0.png");
+            var icon0Path    = Path.Combine(sceSysPath, "icon0.png");
             var keystonePath = Path.Combine(sceSysPath, "keystone");
 
             bool paramSfoExists = File.Exists(paramSfoPath);
-            bool icon0Exists = File.Exists(icon0Path);
+            bool icon0Exists    = File.Exists(icon0Path);
             bool keystoneExists = File.Exists(keystonePath);
 
             progress?.Report(ProgressReport.Log(""));
             progress?.Report(ProgressReport.Log("=== Extract summary ==="));
             progress?.Report(ProgressReport.Log($"  param.sfo:  {(paramSfoExists ? "present" : "MISSING")}"));
-            progress?.Report(ProgressReport.Log($"  icon0.png:  {(icon0Exists ? "present" : "not present (optional)")}"));
+            progress?.Report(ProgressReport.Log($"  icon0.png:  {(icon0Exists    ? "present" : "not present (optional)")}"));
             progress?.Report(ProgressReport.Log($"  keystone:   {(keystoneExists ? "present" : inspection.KeystoneNeeded ? "MISSING (required for base game!)" : "not present (OK for update/DLC)")}"));
 
             if (inspection.KeystoneNeeded && !keystoneExists)
@@ -275,10 +284,8 @@ public sealed class RepackPipeline
                 progress?.Report(ProgressReport.Log("[warn] param.sfo is missing. Repack will fail without it."));
             }
 
-            // Back up the original param.sfo. gengp4_patch.exe rewrites
-            // APP_VER and VERSION inside it during GP4 generation. The
-            // backup lives NEXT TO the extract folder (not inside it) so
-            // gengp4_patch doesn't include it in the built PKG.
+            // Back up the original param.sfo so we can restore it after
+            // gengp4 rewrites APP_VER and VERSION.
             if (paramSfoExists)
             {
                 var backupPath = GetParamSfoBackupPath(extractFull);
@@ -297,16 +304,16 @@ public sealed class RepackPipeline
 
             var log = new RepackExtractLog
             {
-                SourcePkg = sourceFull,
+                SourcePkg      = sourceFull,
                 SourceFileSize = inspection.FileSize,
-                TitleId = inspection.TitleId,
-                ContentId = inspection.ContentId,
-                Category = inspection.Category,
-                CategoryLabel = inspection.CategoryLabel,
+                TitleId        = inspection.TitleId,
+                ContentId      = inspection.ContentId,
+                Category       = inspection.Category,
+                CategoryLabel  = inspection.CategoryLabel,
                 KeystoneNeeded = inspection.KeystoneNeeded,
-                KeystoneFound = keystoneExists,
-                ExtractedAt = DateTime.Now,
-                ExtractTool = "PS4 Remarry (orbis-pub-cmd 3.87)",
+                KeystoneFound  = keystoneExists,
+                ExtractedAt    = DateTime.Now,
+                ExtractTool    = "PS4 Remarry (orbis-pub-cmd 3.87)",
             };
             log.Write(extractFull);
 
@@ -319,7 +326,10 @@ public sealed class RepackPipeline
         }
         catch
         {
-            try { FileSystemUtil.TryDeleteDirectory(extractFull); } catch { }
+            // SAFETY: only delete the extract folder if we created it. If it
+            // existed before we started, the user owns it and any content
+            // they already had must survive our failure.
+            FileSystemUtil.DeleteOnlyIfWeCreated(extractFull, weCreatedExtractFolder);
             try { FileSystemUtil.TryDeleteFile(GetParamSfoBackupPath(extractFull)); } catch { }
             throw;
         }
@@ -362,8 +372,8 @@ public sealed class RepackPipeline
 
         if (log is not null)
         {
-            category = log.Category;
-            categoryLabel = log.CategoryLabel;
+            category       = log.Category;
+            categoryLabel  = log.CategoryLabel;
             keystoneNeeded = log.KeystoneNeeded;
 
             progress?.Report(ProgressReport.Log(
@@ -384,7 +394,7 @@ public sealed class RepackPipeline
                 catch { }
             }
             var d = DescribeCategory(category);
-            categoryLabel = d.Label;
+            categoryLabel  = d.Label;
             keystoneNeeded = d.KeystoneNeeded;
 
             progress?.Report(ProgressReport.Log(
@@ -411,11 +421,16 @@ public sealed class RepackPipeline
                 "param.sfo is missing from sce_sys — cannot repack.", paramSfoPath);
 
         bool isBaseGame = category.Equals("gd", StringComparison.OrdinalIgnoreCase) || keystoneNeeded;
-        bool isPatch = category.Equals("gp", StringComparison.OrdinalIgnoreCase);
+        bool isPatch    = category.Equals("gp", StringComparison.OrdinalIgnoreCase);
+        bool isDlc      = category.Equals("gde", StringComparison.OrdinalIgnoreCase)
+                       || category.Equals("gdk", StringComparison.OrdinalIgnoreCase)
+                       || category.Equals("gda", StringComparison.OrdinalIgnoreCase)
+                       || category.Equals("ac",  StringComparison.OrdinalIgnoreCase);
 
         var genExe = isBaseGame ? _tools.Gengp4App : _tools.Gengp4Patch;
         progress?.Report(ProgressReport.Log(
-            $"[repack] using {Path.GetFileName(genExe)} ({(isBaseGame ? "base game" : "patch/update")})"));
+            $"[repack] using {Path.GetFileName(genExe)} " +
+            $"({(isBaseGame ? "base game" : isPatch ? "patch/update" : "DLC")})"));
 
         progress?.Report(ProgressReport.Pct(5, "Generating GP4 project..."));
         var rc = await _runner.RunAsync(
@@ -451,91 +466,89 @@ public sealed class RepackPipeline
         // ------------------------------------------------------------------
         // Patch fixes. gengp4_patch.exe produces a GP4 with the wrong
         // volume_type, wrong storage_type, and no app_path reference.
-        // Fix all three so the built PKG is a proper patch married to the
-        // base game. This means we work with stock, unpatched SDK tools.
+        // DLC needs a different volume_type still. Fix all cases here.
         // ------------------------------------------------------------------
-        if (isPatch)
+        if (isPatch || isDlc)
         {
             try
             {
                 var gp4Text = File.ReadAllText(gp4Path);
                 bool changed = false;
 
-                // --- Fix 1: volume_type pkg_ps4_app -> pkg_ps4_patch ---
-                if (gp4Text.Contains("<volume_type>pkg_ps4_app</volume_type>"))
+                if (isPatch)
                 {
-                    gp4Text = gp4Text.Replace(
-                        "<volume_type>pkg_ps4_app</volume_type>",
-                        "<volume_type>pkg_ps4_patch</volume_type>");
-                    changed = true;
-                    progress?.Report(ProgressReport.Log(
-                        "[repack] changed volume_type to \"pkg_ps4_patch\"."));
-                }
-                else if (gp4Text.Contains("<volume_type>pkg_ps4_patch</volume_type>"))
-                {
-                    progress?.Report(ProgressReport.Log(
-                        "[repack] GP4 already has volume_type pkg_ps4_patch."));
-                }
-
-                // --- Fix 2: storage_type digital50 -> digital25 ---
-                if (gp4Text.Contains("storage_type=\"digital50\""))
-                {
-                    gp4Text = gp4Text.Replace(
-                        "storage_type=\"digital50\"",
-                        "storage_type=\"digital25\"");
-                    changed = true;
-                    progress?.Report(ProgressReport.Log(
-                        "[repack] changed storage_type to \"digital25\"."));
-                }
-                else if (gp4Text.Contains("storage_type=\"digital25\""))
-                {
-                    progress?.Report(ProgressReport.Log(
-                        "[repack] GP4 already has storage_type digital25."));
-                }
-
-                // --- Fix 3: add app_path pointing at the base game ---
-                if (string.IsNullOrWhiteSpace(opts.BaseGamePkg) || !File.Exists(opts.BaseGamePkg))
-                {
-                    progress?.Report(ProgressReport.Log(
-                        "[repack] [warn] no base game PKG provided for patch repack."));
-                    progress?.Report(ProgressReport.Log(
-                        "[repack] [warn] the built update will not be married to a game."));
-                }
-                else if (!gp4Text.Contains("app_path="))
-                {
-                    var appPath = Path.GetFullPath(opts.BaseGamePkg)
-                        .Replace("&", "&amp;")
-                        .Replace("\"", "&quot;");
-
-                    int pkgStart = gp4Text.IndexOf("<package ", StringComparison.OrdinalIgnoreCase);
-                    if (pkgStart >= 0)
+                    // --- Fix 1: volume_type pkg_ps4_app -> pkg_ps4_patch ---
+                    if (gp4Text.Contains("<volume_type>pkg_ps4_app</volume_type>"))
                     {
-                        int pkgEnd = gp4Text.IndexOf("/>", pkgStart, StringComparison.Ordinal);
-                        if (pkgEnd >= 0)
-                        {
-                            gp4Text = gp4Text.Substring(0, pkgEnd)
-                                    + $" app_path=\"{appPath}\" "
-                                    + gp4Text.Substring(pkgEnd);
-                            changed = true;
-                            progress?.Report(ProgressReport.Log(
-                                $"[repack] added app_path=\"{opts.BaseGamePkg}\" to GP4."));
-                        }
-                        else
-                        {
-                            progress?.Report(ProgressReport.Log(
-                                "[repack] [warn] could not find \"/>\" in <package> element."));
-                        }
+                        gp4Text = gp4Text.Replace(
+                            "<volume_type>pkg_ps4_app</volume_type>",
+                            "<volume_type>pkg_ps4_patch</volume_type>");
+                        changed = true;
+                        progress?.Report(ProgressReport.Log(
+                            "[repack] changed volume_type to \"pkg_ps4_patch\"."));
                     }
-                    else
+
+                    // --- Fix 2: storage_type digital50 -> digital25 ---
+                    if (gp4Text.Contains("storage_type=\"digital50\""))
+                    {
+                        gp4Text = gp4Text.Replace(
+                            "storage_type=\"digital50\"",
+                            "storage_type=\"digital25\"");
+                        changed = true;
+                        progress?.Report(ProgressReport.Log(
+                            "[repack] changed storage_type to \"digital25\"."));
+                    }
+
+                    // --- Fix 3: app_path ---
+                    if (string.IsNullOrWhiteSpace(opts.BaseGamePkg) || !File.Exists(opts.BaseGamePkg))
                     {
                         progress?.Report(ProgressReport.Log(
-                            "[repack] [warn] could not find <package> element in GP4."));
+                            "[repack] [warn] no base game PKG provided for patch repack."));
+                    }
+                    else if (!gp4Text.Contains("app_path="))
+                    {
+                        var appPath = Path.GetFullPath(opts.BaseGamePkg)
+                            .Replace("&", "&amp;")
+                            .Replace("\"", "&quot;");
+
+                        int pkgStart = gp4Text.IndexOf("<package ", StringComparison.OrdinalIgnoreCase);
+                        if (pkgStart >= 0)
+                        {
+                            int pkgEnd = gp4Text.IndexOf("/>", pkgStart, StringComparison.Ordinal);
+                            if (pkgEnd >= 0)
+                            {
+                                gp4Text = gp4Text.Substring(0, pkgEnd)
+                                        + $" app_path=\"{appPath}\" "
+                                        + gp4Text.Substring(pkgEnd);
+                                changed = true;
+                                progress?.Report(ProgressReport.Log(
+                                    $"[repack] added app_path=\"{opts.BaseGamePkg}\" to GP4."));
+                            }
+                        }
                     }
                 }
-                else
+                else if (isDlc)
                 {
-                    progress?.Report(ProgressReport.Log(
-                        "[repack] GP4 already has app_path; leaving as-is."));
+                    // DLC: pkg_ps4_app -> pkg_ps4_ac_data
+                    if (gp4Text.Contains("<volume_type>pkg_ps4_app</volume_type>"))
+                    {
+                        gp4Text = gp4Text.Replace(
+                            "<volume_type>pkg_ps4_app</volume_type>",
+                            "<volume_type>pkg_ps4_ac_data</volume_type>");
+                        changed = true;
+                        progress?.Report(ProgressReport.Log(
+                            "[repack] changed volume_type to \"pkg_ps4_ac_data\"."));
+                    }
+
+                    if (gp4Text.Contains("storage_type=\"digital50\""))
+                    {
+                        gp4Text = gp4Text.Replace(
+                            "storage_type=\"digital50\"",
+                            "storage_type=\"digital25\"");
+                        changed = true;
+                        progress?.Report(ProgressReport.Log(
+                            "[repack] changed storage_type to \"digital25\"."));
+                    }
                 }
 
                 if (changed)
@@ -547,12 +560,7 @@ public sealed class RepackPipeline
                     $"[repack] [warn] could not modify GP4: {ex.Message}"));
             }
 
-            // ------------------------------------------------------------------
-            // Restore the original param.sfo. gengp4_patch.exe rewrites
-            // APP_VER and VERSION inside param.sfo during GP4 generation.
-            // Put the original back so the built PKG has correct version
-            // info and CATEGORY.
-            // ------------------------------------------------------------------
+            // Restore original param.sfo. gengp4 rewrites APP_VER and VERSION.
             var backupPath = GetParamSfoBackupPath(extractFull);
             if (File.Exists(backupPath))
             {
@@ -604,6 +612,8 @@ public sealed class RepackPipeline
         progress?.Report(ProgressReport.Pct(100, "Done."));
         return finalPath;
     }
+
+    // ---------- helpers ----------
 
     private static bool IsInsideWorkRoot(string candidate, string root)
     {

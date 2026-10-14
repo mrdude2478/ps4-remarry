@@ -6,15 +6,19 @@ public sealed record MergeOptions(
     string OutputDir,
     string WorkDir);
 
+/// <summary>
+/// Merges a base game PKG and an update PKG into a single new base game PKG.
+/// Inputs are never modified.
+/// </summary>
 public sealed class MergePipeline
 {
     private readonly ProcessRunner _runner;
-    private readonly ToolLocator _tools;
+    private readonly ToolLocator  _tools;
 
     public MergePipeline(ProcessRunner runner, ToolLocator tools)
     {
         _runner = runner;
-        _tools = tools;
+        _tools  = tools;
     }
 
     public async Task<string> RunAsync(
@@ -24,32 +28,22 @@ public sealed class MergePipeline
     {
         _tools.EnsureToolsExist();
 
-        // SAFETY: refuse to run unless the work dir is inside tools\Work.
         if (!IsInsideWorkRoot(opts.WorkDir, _tools.WorkDir))
             throw new InvalidOperationException(
                 $"Refusing to run: work directory '{opts.WorkDir}' is not inside " +
                 $"the tools work folder '{_tools.WorkDir}'.");
 
-        var gameFull = Path.GetFullPath(opts.GamePkg);
+        var gameFull   = Path.GetFullPath(opts.GamePkg);
         var updateFull = Path.GetFullPath(opts.UpdatePkg);
 
         if (string.Equals(gameFull, updateFull, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException(
-                "Game PKG and Update PKG point at the same file. Pick two different files.");
+                "Game PKG and Update PKG point at the same file.");
 
         if (!File.Exists(gameFull))
             throw new FileNotFoundException("Game PKG not found.", gameFull);
         if (!File.Exists(updateFull))
             throw new FileNotFoundException("Update PKG not found.", updateFull);
-
-        if (Directory.Exists(opts.WorkDir))
-        {
-            var (files, dirs, bytes) = SafePathGuard.MeasureDirectory(opts.WorkDir);
-            if (files > 0 || dirs > 0)
-                progress?.Report(ProgressReport.Log(
-                    $"[safety] clearing work folder: {opts.WorkDir} " +
-                    $"({files} files, {dirs} dirs, {Formatting.FormatBytes(bytes)})"));
-        }
 
         Directory.CreateDirectory(opts.WorkDir);
         FileSystemUtil.WipeDirectory(opts.WorkDir, _tools.WorkDir);
@@ -57,7 +51,7 @@ public sealed class MergePipeline
 
         try
         {
-            var gameUnpack = Path.Combine(opts.WorkDir, "Game-pkg");
+            var gameUnpack   = Path.Combine(opts.WorkDir, "Game-pkg");
             var updateUnpack = Path.Combine(opts.WorkDir, "Update-pkg");
             Directory.CreateDirectory(gameUnpack);
             Directory.CreateDirectory(updateUnpack);
@@ -73,7 +67,7 @@ public sealed class MergePipeline
             if (string.Equals(Path.GetDirectoryName(gameFull), outFull, StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(Path.GetDirectoryName(updateFull), outFull, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException(
-                    "Output folder would collide with an input folder. Choose a different output path.");
+                    "Output folder would collide with an input folder.");
 
             ct.ThrowIfCancellationRequested();
 
@@ -104,7 +98,7 @@ public sealed class MergePipeline
             var gameImage0 = Path.Combine(gameUnpack, "Image0");
             if (!Directory.Exists(gameImage0))
                 throw new DirectoryNotFoundException(
-                    $"Expected '{gameImage0}' after extracting game — layout unexpected.");
+                    $"Expected '{gameImage0}' after extracting game.");
 
             var appFolder = Path.Combine(opts.WorkDir, "Game-app");
             FileSystemUtil.TryDeleteDirectory(appFolder);
@@ -172,7 +166,7 @@ public sealed class MergePipeline
 
     private static void MoveSc0IntoImage0(string unpackDir)
     {
-        var sc0 = Path.Combine(unpackDir, "Sc0");
+        var sc0    = Path.Combine(unpackDir, "Sc0");
         var sceSys = Path.Combine(unpackDir, "Image0", "sce_sys");
 
         if (!Directory.Exists(sc0)) return;

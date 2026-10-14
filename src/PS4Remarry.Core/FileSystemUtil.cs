@@ -82,6 +82,18 @@ public static class FileSystemUtil
         }
     }
 
+    /// <summary>
+    /// Recursively delete a directory, but ONLY if we created it this run.
+    /// This is the safe way to clean up after a failed pipeline: if the
+    /// user pointed us at an existing folder (perhaps one that already had
+    /// content), we must never delete it.
+    /// </summary>
+    public static void DeleteOnlyIfWeCreated(string path, bool weCreatedIt)
+    {
+        if (!weCreatedIt) return;
+        try { if (Directory.Exists(path)) Directory.Delete(path, recursive: true); } catch { }
+    }
+
     public static void TryDeleteFile(string path)
     {
         try

@@ -55,7 +55,7 @@ partial class DlcTab
         // lblContentId
         // 
         lblContentId.AutoSize = true;
-        lblContentId.Location = new Point(12, 18);
+        lblContentId.Location = new Point(5, 9);
         lblContentId.Name = "lblContentId";
         lblContentId.Size = new Size(67, 15);
         lblContentId.TabIndex = 0;
@@ -64,10 +64,10 @@ partial class DlcTab
         // txtContentId
         // 
         txtContentId.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        txtContentId.Location = new Point(110, 15);
+        txtContentId.Location = new Point(101, 6);
         txtContentId.Name = "txtContentId";
         txtContentId.ScrollBars = RichTextBoxScrollBars.None;
-        txtContentId.Size = new Size(610, 23);
+        txtContentId.Size = new Size(630, 23);
         txtContentId.TabIndex = 1;
         txtContentId.Text = "";
         txtContentId.WordWrap = false;
@@ -77,7 +77,7 @@ partial class DlcTab
         lblTitleIdPreview.AutoSize = true;
         lblTitleIdPreview.Font = new Font("Segoe UI", 9.75F, FontStyle.Regular, GraphicsUnit.Point, 0);
         lblTitleIdPreview.ForeColor = SystemColors.ControlDarkDark;
-        lblTitleIdPreview.Location = new Point(502, 139);
+        lblTitleIdPreview.Location = new Point(293, 128);
         lblTitleIdPreview.Name = "lblTitleIdPreview";
         lblTitleIdPreview.Size = new Size(35, 17);
         lblTitleIdPreview.TabIndex = 2;
@@ -86,7 +86,7 @@ partial class DlcTab
         // lblTitle
         // 
         lblTitle.AutoSize = true;
-        lblTitle.Location = new Point(12, 47);
+        lblTitle.Location = new Point(5, 38);
         lblTitle.Name = "lblTitle";
         lblTitle.Size = new Size(32, 15);
         lblTitle.TabIndex = 3;
@@ -95,10 +95,10 @@ partial class DlcTab
         // txtTitle
         // 
         txtTitle.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        txtTitle.Location = new Point(110, 44);
+        txtTitle.Location = new Point(101, 35);
         txtTitle.Name = "txtTitle";
         txtTitle.ScrollBars = RichTextBoxScrollBars.None;
-        txtTitle.Size = new Size(610, 23);
+        txtTitle.Size = new Size(630, 23);
         txtTitle.TabIndex = 4;
         txtTitle.Text = "";
         txtTitle.WordWrap = false;
@@ -106,7 +106,7 @@ partial class DlcTab
         // lblIcon
         // 
         lblIcon.AutoSize = true;
-        lblIcon.Location = new Point(12, 76);
+        lblIcon.Location = new Point(5, 68);
         lblIcon.Name = "lblIcon";
         lblIcon.Size = new Size(62, 15);
         lblIcon.TabIndex = 5;
@@ -115,10 +115,10 @@ partial class DlcTab
         // txtIcon
         // 
         txtIcon.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        txtIcon.Location = new Point(110, 73);
+        txtIcon.Location = new Point(101, 64);
         txtIcon.Name = "txtIcon";
         txtIcon.ScrollBars = RichTextBoxScrollBars.None;
-        txtIcon.Size = new Size(440, 23);
+        txtIcon.Size = new Size(438, 23);
         txtIcon.TabIndex = 6;
         txtIcon.Text = "";
         txtIcon.WordWrap = false;
@@ -126,9 +126,9 @@ partial class DlcTab
         // btnBrowseIcon
         // 
         btnBrowseIcon.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        btnBrowseIcon.Location = new Point(558, 72);
+        btnBrowseIcon.Location = new Point(546, 63);
         btnBrowseIcon.Name = "btnBrowseIcon";
-        btnBrowseIcon.Size = new Size(80, 25);
+        btnBrowseIcon.Size = new Size(90, 25);
         btnBrowseIcon.TabIndex = 7;
         btnBrowseIcon.Text = "Browse...";
         btnBrowseIcon.UseVisualStyleBackColor = true;
@@ -136,9 +136,9 @@ partial class DlcTab
         // btnClearIcon
         // 
         btnClearIcon.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        btnClearIcon.Location = new Point(644, 72);
+        btnClearIcon.Location = new Point(641, 63);
         btnClearIcon.Name = "btnClearIcon";
-        btnClearIcon.Size = new Size(76, 25);
+        btnClearIcon.Size = new Size(90, 25);
         btnClearIcon.TabIndex = 8;
         btnClearIcon.Text = "Clear";
         btnClearIcon.UseVisualStyleBackColor = true;
@@ -146,7 +146,7 @@ partial class DlcTab
         // lblOutput
         // 
         lblOutput.AutoSize = true;
-        lblOutput.Location = new Point(12, 106);
+        lblOutput.Location = new Point(5, 98);
         lblOutput.Name = "lblOutput";
         lblOutput.Size = new Size(82, 15);
         lblOutput.TabIndex = 9;
@@ -155,10 +155,10 @@ partial class DlcTab
         // txtOutput
         // 
         txtOutput.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        txtOutput.Location = new Point(110, 103);
+        txtOutput.Location = new Point(101, 94);
         txtOutput.Name = "txtOutput";
         txtOutput.ScrollBars = RichTextBoxScrollBars.None;
-        txtOutput.Size = new Size(520, 23);
+        txtOutput.Size = new Size(535, 23);
         txtOutput.TabIndex = 10;
         txtOutput.Text = "";
         txtOutput.WordWrap = false;
@@ -166,27 +166,27 @@ partial class DlcTab
         // btnBrowseOutput
         // 
         btnBrowseOutput.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        btnBrowseOutput.Location = new Point(638, 102);
+        btnBrowseOutput.Location = new Point(641, 93);
         btnBrowseOutput.Name = "btnBrowseOutput";
-        btnBrowseOutput.Size = new Size(82, 25);
+        btnBrowseOutput.Size = new Size(90, 25);
         btnBrowseOutput.TabIndex = 11;
         btnBrowseOutput.Text = "Browse...";
         btnBrowseOutput.UseVisualStyleBackColor = true;
         // 
         // btnCreate
         // 
-        btnCreate.Location = new Point(110, 132);
+        btnCreate.Location = new Point(5, 125);
         btnCreate.Name = "btnCreate";
-        btnCreate.Size = new Size(160, 32);
+        btnCreate.Size = new Size(90, 25);
         btnCreate.TabIndex = 12;
-        btnCreate.Text = "Create DLC Unlocker";
+        btnCreate.Text = "Make DLC";
         btnCreate.UseVisualStyleBackColor = true;
         // 
         // btnOpenOutput
         // 
-        btnOpenOutput.Location = new Point(278, 132);
+        btnOpenOutput.Location = new Point(101, 125);
         btnOpenOutput.Name = "btnOpenOutput";
-        btnOpenOutput.Size = new Size(120, 32);
+        btnOpenOutput.Size = new Size(90, 25);
         btnOpenOutput.TabIndex = 13;
         btnOpenOutput.Text = "Open Output";
         btnOpenOutput.UseVisualStyleBackColor = true;
@@ -194,9 +194,9 @@ partial class DlcTab
         // btnCancel
         // 
         btnCancel.Enabled = false;
-        btnCancel.Location = new Point(406, 132);
+        btnCancel.Location = new Point(197, 125);
         btnCancel.Name = "btnCancel";
-        btnCancel.Size = new Size(90, 32);
+        btnCancel.Size = new Size(90, 25);
         btnCancel.TabIndex = 14;
         btnCancel.Text = "Cancel";
         btnCancel.UseVisualStyleBackColor = true;
@@ -204,9 +204,9 @@ partial class DlcTab
         // progressBar
         // 
         progressBar.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        progressBar.Location = new Point(12, 170);
+        progressBar.Location = new Point(5, 156);
         progressBar.Name = "progressBar";
-        progressBar.Size = new Size(712, 22);
+        progressBar.Size = new Size(726, 22);
         progressBar.TabIndex = 15;
         // 
         // txtLog
@@ -215,11 +215,11 @@ partial class DlcTab
         txtLog.BackColor = Color.Black;
         txtLog.Font = new Font("Consolas", 9F);
         txtLog.ForeColor = Color.Gainsboro;
-        txtLog.Location = new Point(12, 198);
+        txtLog.Location = new Point(5, 184);
         txtLog.Name = "txtLog";
         txtLog.ReadOnly = true;
         txtLog.ScrollBars = RichTextBoxScrollBars.Vertical;
-        txtLog.Size = new Size(712, 287);
+        txtLog.Size = new Size(726, 311);
         txtLog.TabIndex = 16;
         txtLog.Text = "";
         // 

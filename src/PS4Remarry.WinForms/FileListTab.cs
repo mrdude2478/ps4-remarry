@@ -24,11 +24,14 @@ public partial class FileListTab : UserControl
     private ToolStripMenuItem? _miExtractFolder;
     private ToolStripMenuItem? _miExtractFile;
 
+    private ContextMenuStrip? _logContextMenu;
+
     public FileListTab()
     {
         InitializeComponent();
         WireEvents();
         BuildTreeContextMenu();
+        BuildLogContextMenu();
         SetupLogFlushTimer();
         UpdateButtonStates();
     }
@@ -66,6 +69,57 @@ public partial class FileListTab : UserControl
                 try { Clipboard.SetText(node.FullPath); } catch { }
             }
         }));
+    }
+
+    private void BuildLogContextMenu()
+    {
+        _logContextMenu = new ContextMenuStrip();
+
+        _logContextMenu.Items.Add(new ToolStripMenuItem("Clear Log", null, (_, _) =>
+        {
+            _logBuffer.Clear();
+            txtLog.Clear();
+            _lastLoggedLine = null;
+            _logDirty = false;
+            _lastInfoDumpedFor = null;
+        }));
+
+        _logContextMenu.Items.Add(new ToolStripSeparator());
+
+        _logContextMenu.Items.Add(new ToolStripMenuItem("Copy All", null, (_, _) =>
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(txtLog.Text))
+                    Clipboard.SetText(txtLog.Text);
+            }
+            catch { }
+        }));
+
+        _logContextMenu.Items.Add(new ToolStripMenuItem("Copy Selected", null, (_, _) =>
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(txtLog.SelectedText))
+                    Clipboard.SetText(txtLog.SelectedText);
+            }
+            catch { }
+        }));
+
+        _logContextMenu.Items.Add(new ToolStripMenuItem("Save Log As...", null, (_, _) =>
+        {
+            using var dlg = new SaveFileDialog
+            {
+                Title = "Save log",
+                Filter = "Text file (*.txt)|*.txt|All files (*.*)|*.*",
+                DefaultExt = "txt",
+                FileName = "filelist-log.txt",
+            };
+            if (dlg.ShowDialog(this) != DialogResult.OK) return;
+            try { File.WriteAllText(dlg.FileName, txtLog.Text); } catch { }
+        }));
+
+        txtLog.ContextMenuStrip = _logContextMenu;
     }
 
     private void WireEvents()
@@ -116,13 +170,11 @@ public partial class FileListTab : UserControl
             Filter = "PS4 PKG (*.pkg)|*.pkg|All files (*.*)|*.*",
             CheckFileExists = true,
         };
-        if (dlg.ShowDialog(this) == DialogResult.OK)
-        {
-            txtSourcePkg.Text = dlg.FileName;
-            ClearTree();
-            _lastInfoDumpedFor = null;
-            _ = DumpPkgInfoAsync(dlg.FileName);
-        }
+        if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
+        txtSourcePkg.Text = dlg.FileName;
+        ResetForNewPkg();
+        _ = DumpPkgInfoAsync(dlg.FileName);
     }
 
     private void PkgBox_DragEnter(object? sender, DragEventArgs e)
@@ -142,9 +194,19 @@ public partial class FileListTab : UserControl
             f.EndsWith(".pkg", StringComparison.OrdinalIgnoreCase)) ?? files[0];
 
         txtSourcePkg.Text = pkg;
-        ClearTree();
-        _lastInfoDumpedFor = null;
+        ResetForNewPkg();
         _ = DumpPkgInfoAsync(pkg);
+    }
+
+    private void ResetForNewPkg()
+    {
+        ClearTree();
+        _logBuffer.Clear();
+        txtLog.Clear();
+        _lastLoggedLine = null;
+        _logDirty = false;
+        _lastInfoDumpedFor = null;
+        lblSummary.Text = "";
     }
 
     // ---------- Load ----------
@@ -320,10 +382,6 @@ public partial class FileListTab : UserControl
             return;
         }
 
-        // Use the folder's own leaf name as the top-level folder at the
-        // destination. So extracting Image0/sce_sys/trophy to C:\Test
-        // produces C:\Test\trophy\... rather than
-        // C:\Test\Image0\sce_sys\trophy\...
         var leafName = folder.FullPath.Split('/').Last();
 
         await ExtractManyAsync(
@@ -333,10 +391,6 @@ public partial class FileListTab : UserControl
             folderName: leafName);
     }
 
-    /// <summary>
-    /// Walks the tree under <paramref name="folder"/> and returns every
-    /// leaf (file) node.
-    /// </summary>
     private static IEnumerable<PkgFileListReader.TreeNode> CollectLeaves(PkgFileListReader.TreeNode folder)
     {
         if (!folder.IsFolder) { yield return folder; yield break; }
@@ -357,18 +411,6 @@ public partial class FileListTab : UserControl
 
     // ---------- Shared extraction core ----------
 
-    /// <summary>
-    /// Extracts a set of files into a user-chosen folder.
-    ///
-    /// For single-file extraction, both <paramref name="stripPrefix"/> and
-    /// <paramref name="folderName"/> are null and each file lands at its
-    /// full internal path under the destination.
-    ///
-    /// For folder extraction, <paramref name="stripPrefix"/> is the folder's
-    /// internal path and <paramref name="folderName"/> is the folder's leaf
-    /// name. The result is &lt;destination&gt;\&lt;folderName&gt;\ with the
-    /// rest of each file's path preserved underneath.
-    /// </summary>
     private async Task ExtractManyAsync(
         IReadOnlyList<PkgFileListReader.TreeNode> files,
         string label,
@@ -404,14 +446,10 @@ public partial class FileListTab : UserControl
             return;
         }
 
-        // For folder extraction, the effective output root is a subfolder
-        // named after the folder. For single-file extraction, it's the
-        // destination as-is.
         var effectiveOutput = folderName is not null
             ? Path.Combine(outputRoot, folderName)
             : outputRoot;
 
-        // Confirm before merging into an existing folder of the same name.
         if (folderName is not null && Directory.Exists(effectiveOutput))
         {
             var answer = MessageBox.Show(this,
@@ -537,13 +575,18 @@ public partial class FileListTab : UserControl
             return;
         }
 
+        // SAFETY: warn the user about exactly what will happen, especially
+        // when the target folder already exists. The pipeline will only
+        // delete the folder on failure if WE created it, but making the
+        // behaviour explicit here avoids surprises either way.
         if (Directory.Exists(outputRoot) &&
             Directory.EnumerateFileSystemEntries(outputRoot).Any())
         {
             var answer = MessageBox.Show(this,
                 "The chosen folder is not empty:" + Environment.NewLine + Environment.NewLine +
                 outputRoot + Environment.NewLine + Environment.NewLine +
-                "Delete its contents and extract anyway?",
+                "Delete its contents and extract anyway?" + Environment.NewLine + Environment.NewLine +
+                "(Only do this if you're sure the folder contains nothing you want to keep.)",
                 "Folder not empty", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (answer != DialogResult.Yes) return;
 
@@ -553,7 +596,7 @@ public partial class FileListTab : UserControl
 
         var tools = ToolLocator.Default();
 
-        if (!WorkFolderPrompt.ConfirmWipe(this, tools.WorkDir))
+        if (!ConfirmWorkFolderWipe(tools.WorkDir))
             return;
 
         StartOperation();
@@ -604,9 +647,18 @@ public partial class FileListTab : UserControl
         }
         catch (Exception ex)
         {
+            // The pipeline itself now handles the "was this folder ours?"
+            // cleanup correctly, so we just report what happened.
             AppendLogToBuffer("ERROR: " + ex.Message);
             FlushLogIfDirty();
             progressBar.Value = 0;
+
+            MessageBox.Show(this,
+                "Extract failed:" + Environment.NewLine + Environment.NewLine +
+                ex.Message + Environment.NewLine + Environment.NewLine +
+                "The extract folder " +
+                (Directory.Exists(outputRoot) ? "was left in place." : "was cleaned up."),
+                "Extract all failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         finally
         {
@@ -808,6 +860,11 @@ public partial class FileListTab : UserControl
     }
 
     private void statusLog(string text) => AppendLogToBuffer($"[status] {text}");
+
+    private bool ConfirmWorkFolderWipe(string workDir)
+    {
+        return WorkFolderPrompt.ConfirmWipe(this, workDir);
+    }
 
     private void Warn(string msg) =>
         MessageBox.Show(this, msg, "File List",

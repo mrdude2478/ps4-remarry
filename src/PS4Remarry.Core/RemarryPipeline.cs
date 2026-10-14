@@ -6,15 +6,18 @@ public sealed record RemarryOptions(
     string OutputDir,
     string WorkDir);
 
+/// <summary>
+/// The C# re-implementation of "Option 1: Remarry Game + Update" from PS4 v27.cmd.
+/// </summary>
 public sealed class RemarryPipeline
 {
     private readonly ProcessRunner _runner;
-    private readonly ToolLocator _tools;
+    private readonly ToolLocator  _tools;
 
     public RemarryPipeline(ProcessRunner runner, ToolLocator tools)
     {
         _runner = runner;
-        _tools = tools;
+        _tools  = tools;
     }
 
     public async Task<string> RunAsync(
@@ -24,21 +27,10 @@ public sealed class RemarryPipeline
     {
         _tools.EnsureToolsExist();
 
-        // SAFETY: refuse to run unless the work dir is inside tools\Work.
         if (!IsInsideWorkRoot(opts.WorkDir, _tools.WorkDir))
             throw new InvalidOperationException(
                 $"Refusing to run: work directory '{opts.WorkDir}' is not inside " +
                 $"the tools work folder '{_tools.WorkDir}'.");
-
-        // SAFETY: log what we're about to wipe, in case it's ever non-empty.
-        if (Directory.Exists(opts.WorkDir))
-        {
-            var (files, dirs, bytes) = SafePathGuard.MeasureDirectory(opts.WorkDir);
-            if (files > 0 || dirs > 0)
-                progress?.Report(ProgressReport.Log(
-                    $"[safety] clearing work folder: {opts.WorkDir} " +
-                    $"({files} files, {dirs} dirs, {Formatting.FormatBytes(bytes)})"));
-        }
 
         Directory.CreateDirectory(opts.OutputDir);
         FileSystemUtil.WipeDirectory(opts.WorkDir, _tools.WorkDir);
@@ -59,8 +51,8 @@ public sealed class RemarryPipeline
             var folderName = $"{titleId}-patch";
             var folderPath = Path.Combine(opts.WorkDir, folderName);
             var unpackPath = Path.Combine(opts.WorkDir, "Update-pkg");
-            var gp4Path = Path.Combine(opts.WorkDir, folderName + ".gp4");
-            var buildDir = Path.Combine(opts.WorkDir, "build");
+            var gp4Path    = Path.Combine(opts.WorkDir, folderName + ".gp4");
+            var buildDir   = Path.Combine(opts.WorkDir, "build");
 
             ct.ThrowIfCancellationRequested();
 
@@ -82,7 +74,7 @@ public sealed class RemarryPipeline
 
             progress?.Report(ProgressReport.Pct(40, "Merging Sc0 into Image0\\sce_sys..."));
             var image0 = Path.Combine(unpackPath, "Image0");
-            var sc0 = Path.Combine(unpackPath, "Sc0");
+            var sc0    = Path.Combine(unpackPath, "Sc0");
 
             if (!Directory.Exists(image0))
             {

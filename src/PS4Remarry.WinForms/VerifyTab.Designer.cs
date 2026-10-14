@@ -50,7 +50,7 @@ partial class VerifyTab
         // 
         lblGame.Anchor = AnchorStyles.None;
         lblGame.AutoSize = true;
-        lblGame.Location = new Point(3, 25);
+        lblGame.Location = new Point(3, 19);
         lblGame.Name = "lblGame";
         lblGame.Size = new Size(65, 15);
         lblGame.TabIndex = 0;
@@ -71,7 +71,7 @@ partial class VerifyTab
         // btnBrowseGame
         // 
         btnBrowseGame.Anchor = AnchorStyles.None;
-        btnBrowseGame.Location = new Point(704, 15);
+        btnBrowseGame.Location = new Point(704, 14);
         btnBrowseGame.Name = "btnBrowseGame";
         btnBrowseGame.Size = new Size(90, 25);
         btnBrowseGame.TabIndex = 2;
@@ -82,7 +82,7 @@ partial class VerifyTab
         // 
         lblUpdate.Anchor = AnchorStyles.None;
         lblUpdate.AutoSize = true;
-        lblUpdate.Location = new Point(3, 55);
+        lblUpdate.Location = new Point(3, 50);
         lblUpdate.Name = "lblUpdate";
         lblUpdate.Size = new Size(72, 15);
         lblUpdate.TabIndex = 3;
@@ -103,7 +103,7 @@ partial class VerifyTab
         // btnBrowseUpdate
         // 
         btnBrowseUpdate.Anchor = AnchorStyles.None;
-        btnBrowseUpdate.Location = new Point(704, 46);
+        btnBrowseUpdate.Location = new Point(704, 45);
         btnBrowseUpdate.Name = "btnBrowseUpdate";
         btnBrowseUpdate.Size = new Size(90, 25);
         btnBrowseUpdate.TabIndex = 5;
@@ -123,7 +123,7 @@ partial class VerifyTab
         // btnClear
         // 
         btnClear.Anchor = AnchorStyles.None;
-        btnClear.Location = new Point(188, 76);
+        btnClear.Location = new Point(186, 76);
         btnClear.Name = "btnClear";
         btnClear.Size = new Size(90, 25);
         btnClear.TabIndex = 7;

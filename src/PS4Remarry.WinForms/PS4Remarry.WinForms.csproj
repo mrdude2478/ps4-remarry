@@ -21,10 +21,7 @@
 
   <ItemGroup>
     <None Include="..\..\tools\**\*" Link="tools\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\..\tools\.ps4remarry-trusted"
-        Link="tools\.ps4remarry-trusted"
-        CopyToOutputDirectory="PreserveNewest"
-        Condition="Exists('..\..\tools\.ps4remarry-trusted')" />
+    <None Include="..\..\tools\.ps4remarry-trusted" Link="tools\.ps4remarry-trusted" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\..\tools\.ps4remarry-trusted')" />
   </ItemGroup>
 
   <ItemGroup>

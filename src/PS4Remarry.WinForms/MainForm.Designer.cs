@@ -148,7 +148,7 @@ partial class MainForm
         // lblGame
         // 
         lblGame.AutoSize = true;
-        lblGame.Location = new Point(7, 10);
+        lblGame.Location = new Point(8, 11);
         lblGame.Name = "lblGame";
         lblGame.Size = new Size(65, 15);
         lblGame.TabIndex = 0;
@@ -158,10 +158,10 @@ partial class MainForm
         // 
         txtGame.AllowDrop = true;
         txtGame.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        txtGame.Location = new Point(113, 5);
+        txtGame.Location = new Point(104, 8);
         txtGame.Name = "txtGame";
         txtGame.ScrollBars = RichTextBoxScrollBars.None;
-        txtGame.Size = new Size(552, 23);
+        txtGame.Size = new Size(561, 23);
         txtGame.TabIndex = 1;
         txtGame.Text = "";
         txtGame.WordWrap = false;
@@ -171,7 +171,7 @@ partial class MainForm
         // btnBrowseGame
         // 
         btnBrowseGame.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        btnBrowseGame.Location = new Point(671, 5);
+        btnBrowseGame.Location = new Point(707, 8);
         btnBrowseGame.Name = "btnBrowseGame";
         btnBrowseGame.Size = new Size(90, 25);
         btnBrowseGame.TabIndex = 2;
@@ -182,7 +182,7 @@ partial class MainForm
         // btnRenameGame
         // 
         btnRenameGame.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        btnRenameGame.Location = new Point(767, 5);
+        btnRenameGame.Location = new Point(671, 8);
         btnRenameGame.Name = "btnRenameGame";
         btnRenameGame.Size = new Size(30, 25);
         btnRenameGame.TabIndex = 3;
@@ -193,7 +193,7 @@ partial class MainForm
         // lblUpdate
         // 
         lblUpdate.AutoSize = true;
-        lblUpdate.Location = new Point(7, 44);
+        lblUpdate.Location = new Point(8, 42);
         lblUpdate.Name = "lblUpdate";
         lblUpdate.Size = new Size(72, 15);
         lblUpdate.TabIndex = 4;
@@ -203,10 +203,10 @@ partial class MainForm
         // 
         txtUpdate.AllowDrop = true;
         txtUpdate.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        txtUpdate.Location = new Point(113, 39);
+        txtUpdate.Location = new Point(104, 39);
         txtUpdate.Name = "txtUpdate";
         txtUpdate.ScrollBars = RichTextBoxScrollBars.None;
-        txtUpdate.Size = new Size(552, 23);
+        txtUpdate.Size = new Size(561, 23);
         txtUpdate.TabIndex = 5;
         txtUpdate.Text = "";
         txtUpdate.WordWrap = false;
@@ -216,7 +216,7 @@ partial class MainForm
         // btnBrowseUpdate
         // 
         btnBrowseUpdate.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        btnBrowseUpdate.Location = new Point(671, 39);
+        btnBrowseUpdate.Location = new Point(707, 39);
         btnBrowseUpdate.Name = "btnBrowseUpdate";
         btnBrowseUpdate.Size = new Size(90, 25);
         btnBrowseUpdate.TabIndex = 6;
@@ -227,7 +227,7 @@ partial class MainForm
         // btnRenameUpdate
         // 
         btnRenameUpdate.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        btnRenameUpdate.Location = new Point(767, 39);
+        btnRenameUpdate.Location = new Point(671, 39);
         btnRenameUpdate.Name = "btnRenameUpdate";
         btnRenameUpdate.Size = new Size(30, 25);
         btnRenameUpdate.TabIndex = 7;
@@ -238,7 +238,7 @@ partial class MainForm
         // lblOutput
         // 
         lblOutput.AutoSize = true;
-        lblOutput.Location = new Point(7, 76);
+        lblOutput.Location = new Point(8, 74);
         lblOutput.Name = "lblOutput";
         lblOutput.Size = new Size(82, 15);
         lblOutput.TabIndex = 8;
@@ -247,10 +247,10 @@ partial class MainForm
         // txtOutput
         // 
         txtOutput.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        txtOutput.Location = new Point(113, 73);
+        txtOutput.Location = new Point(104, 71);
         txtOutput.Name = "txtOutput";
         txtOutput.ScrollBars = RichTextBoxScrollBars.None;
-        txtOutput.Size = new Size(552, 23);
+        txtOutput.Size = new Size(597, 23);
         txtOutput.TabIndex = 9;
         txtOutput.Text = "";
         txtOutput.WordWrap = false;
@@ -258,7 +258,7 @@ partial class MainForm
         // btnBrowseOutput
         // 
         btnBrowseOutput.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        btnBrowseOutput.Location = new Point(671, 73);
+        btnBrowseOutput.Location = new Point(707, 71);
         btnBrowseOutput.Name = "btnBrowseOutput";
         btnBrowseOutput.Size = new Size(90, 25);
         btnBrowseOutput.TabIndex = 10;
@@ -268,9 +268,9 @@ partial class MainForm
         // 
         // btnRun
         // 
-        btnRun.Location = new Point(7, 117);
+        btnRun.Location = new Point(8, 102);
         btnRun.Name = "btnRun";
-        btnRun.Size = new Size(100, 32);
+        btnRun.Size = new Size(90, 25);
         btnRun.TabIndex = 11;
         btnRun.Text = "Run Remarry";
         btnRun.UseVisualStyleBackColor = true;
@@ -278,9 +278,9 @@ partial class MainForm
         // 
         // btnMerge
         // 
-        btnMerge.Location = new Point(113, 117);
+        btnMerge.Location = new Point(104, 102);
         btnMerge.Name = "btnMerge";
-        btnMerge.Size = new Size(100, 32);
+        btnMerge.Size = new Size(90, 25);
         btnMerge.TabIndex = 19;
         btnMerge.Text = "Merge";
         btnMerge.UseVisualStyleBackColor = true;
@@ -289,9 +289,9 @@ partial class MainForm
         // btnCancel
         // 
         btnCancel.Enabled = false;
-        btnCancel.Location = new Point(219, 117);
+        btnCancel.Location = new Point(200, 102);
         btnCancel.Name = "btnCancel";
-        btnCancel.Size = new Size(100, 32);
+        btnCancel.Size = new Size(90, 25);
         btnCancel.TabIndex = 12;
         btnCancel.Text = "Cancel";
         btnCancel.UseVisualStyleBackColor = true;
@@ -299,9 +299,9 @@ partial class MainForm
         // 
         // btnOpenOutput
         // 
-        btnOpenOutput.Location = new Point(325, 117);
+        btnOpenOutput.Location = new Point(296, 102);
         btnOpenOutput.Name = "btnOpenOutput";
-        btnOpenOutput.Size = new Size(100, 32);
+        btnOpenOutput.Size = new Size(90, 25);
         btnOpenOutput.TabIndex = 13;
         btnOpenOutput.Text = "Open Output";
         btnOpenOutput.UseVisualStyleBackColor = true;
@@ -310,9 +310,9 @@ partial class MainForm
         // btnVerifyOutput
         // 
         btnVerifyOutput.Enabled = false;
-        btnVerifyOutput.Location = new Point(431, 117);
+        btnVerifyOutput.Location = new Point(392, 102);
         btnVerifyOutput.Name = "btnVerifyOutput";
-        btnVerifyOutput.Size = new Size(100, 32);
+        btnVerifyOutput.Size = new Size(90, 25);
         btnVerifyOutput.TabIndex = 14;
         btnVerifyOutput.Text = "Verify Output";
         btnVerifyOutput.UseVisualStyleBackColor = true;
@@ -321,9 +321,9 @@ partial class MainForm
         // btnShowIcon
         // 
         btnShowIcon.Enabled = false;
-        btnShowIcon.Location = new Point(671, 121);
+        btnShowIcon.Location = new Point(488, 102);
         btnShowIcon.Name = "btnShowIcon";
-        btnShowIcon.Size = new Size(58, 32);
+        btnShowIcon.Size = new Size(90, 25);
         btnShowIcon.TabIndex = 15;
         btnShowIcon.Text = "Icon";
         btnShowIcon.UseVisualStyleBackColor = true;
@@ -332,18 +332,18 @@ partial class MainForm
         // btnShowBackground
         // 
         btnShowBackground.Enabled = false;
-        btnShowBackground.Location = new Point(735, 121);
+        btnShowBackground.Location = new Point(584, 102);
         btnShowBackground.Name = "btnShowBackground";
-        btnShowBackground.Size = new Size(62, 32);
+        btnShowBackground.Size = new Size(90, 25);
         btnShowBackground.TabIndex = 16;
-        btnShowBackground.Text = "BG";
+        btnShowBackground.Text = "Background";
         btnShowBackground.UseVisualStyleBackColor = true;
         btnShowBackground.Click += btnShowBackground_Click;
         // 
         // progressBar
         // 
         progressBar.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        progressBar.Location = new Point(7, 159);
+        progressBar.Location = new Point(7, 133);
         progressBar.Name = "progressBar";
         progressBar.Size = new Size(790, 22);
         progressBar.TabIndex = 17;
@@ -354,11 +354,11 @@ partial class MainForm
         txtLog.BackColor = Color.Black;
         txtLog.Font = new Font("Consolas", 9F);
         txtLog.ForeColor = Color.Gainsboro;
-        txtLog.Location = new Point(7, 189);
+        txtLog.Location = new Point(7, 162);
         txtLog.Name = "txtLog";
         txtLog.ReadOnly = true;
         txtLog.ScrollBars = RichTextBoxScrollBars.Vertical;
-        txtLog.Size = new Size(790, 293);
+        txtLog.Size = new Size(790, 321);
         txtLog.TabIndex = 18;
         txtLog.Text = "";
         // 
