@@ -38,6 +38,7 @@ public partial class MainForm : Form
         }
 
         UpdateRunButtonState();
+        FormClosed += (_, _) => psnSearchTab.Shutdown();
     }
 
     // ---------- Browse handlers ----------

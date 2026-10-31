@@ -21,6 +21,8 @@ partial class MainForm
     
     private System.Windows.Forms.TabPage     tabKeystone;
     private PS4Remarry.WinForms.KeystoneTab  keystoneTab;
+    private System.Windows.Forms.TabPage     tabPsn;
+    private PS4Remarry.WinForms.PsnSearchTab psnSearchTab;
 
     private System.Windows.Forms.Label   lblGame;
     private System.Windows.Forms.RichTextBox txtGame;
@@ -93,6 +95,8 @@ partial class MainForm
         fileListTab = new FileListTab();
         tabKeystone = new TabPage();
         keystoneTab = new KeystoneTab();
+        tabPsn = new TabPage();
+        psnSearchTab = new PsnSearchTab();
         statusStrip = new StatusStrip();
         statusLabel = new ToolStripStatusLabel();
         tabControl.SuspendLayout();
@@ -102,6 +106,8 @@ partial class MainForm
         tabRepack.SuspendLayout();
         tabDlc.SuspendLayout();
         tabFileList.SuspendLayout();
+        tabKeystone.SuspendLayout();
+        tabPsn.SuspendLayout();
         statusStrip.SuspendLayout();
         SuspendLayout();
         // 
@@ -111,9 +117,10 @@ partial class MainForm
         tabControl.Controls.Add(tabBatch);
         tabControl.Controls.Add(tabVerify);
         tabControl.Controls.Add(tabRepack);
-        tabControl.Controls.Add(tabDlc);
         tabControl.Controls.Add(tabFileList);
         tabControl.Controls.Add(tabKeystone);
+        tabControl.Controls.Add(tabDlc);
+        tabControl.Controls.Add(tabPsn);
         tabControl.Dock = DockStyle.Fill;
         tabControl.Location = new Point(0, 0);
         tabControl.Name = "tabControl";
@@ -465,25 +472,44 @@ partial class MainForm
         fileListTab.Name = "fileListTab";
         fileListTab.Size = new Size(797, 485);
         fileListTab.TabIndex = 0;
-        //
+        // 
         // tabKeystone
         // 
         tabKeystone.Controls.Add(keystoneTab);
         tabKeystone.Location = new Point(4, 24);
-        tabKeystone.Name     = "tabKeystone";
-        tabKeystone.Padding  = new Padding(3);
-        tabKeystone.Size     = new Size(803, 491);
+        tabKeystone.Name = "tabKeystone";
+        tabKeystone.Padding = new Padding(3);
+        tabKeystone.Size = new Size(803, 491);
         tabKeystone.TabIndex = 6;
-        tabKeystone.Text     = "Keystone";
+        tabKeystone.Text = "Keystone";
         tabKeystone.UseVisualStyleBackColor = true;
         // 
         // keystoneTab
         // 
-        keystoneTab.Dock     = DockStyle.Fill;
+        keystoneTab.Dock = DockStyle.Fill;
         keystoneTab.Location = new Point(3, 3);
-        keystoneTab.Name     = "keystoneTab";
-        keystoneTab.Size     = new Size(797, 485);
+        keystoneTab.Name = "keystoneTab";
+        keystoneTab.Size = new Size(797, 485);
         keystoneTab.TabIndex = 0;
+        // 
+        // tabPsn
+        // 
+        tabPsn.Controls.Add(psnSearchTab);
+        tabPsn.Location = new Point(4, 24);
+        tabPsn.Name = "tabPsn";
+        tabPsn.Padding = new Padding(3);
+        tabPsn.Size = new Size(803, 491);
+        tabPsn.TabIndex = 7;
+        tabPsn.Text = "PSN Search";
+        tabPsn.UseVisualStyleBackColor = true;
+        // 
+        // psnSearchTab
+        // 
+        psnSearchTab.Dock = DockStyle.Fill;
+        psnSearchTab.Location = new Point(3, 3);
+        psnSearchTab.Name = "psnSearchTab";
+        psnSearchTab.Size = new Size(797, 485);
+        psnSearchTab.TabIndex = 0;
         // 
         // statusStrip
         // 
@@ -522,6 +548,7 @@ partial class MainForm
         tabDlc.ResumeLayout(false);
         tabFileList.ResumeLayout(false);
         tabKeystone.ResumeLayout(false);
+        tabPsn.ResumeLayout(false);
         statusStrip.ResumeLayout(false);
         statusStrip.PerformLayout();
         ResumeLayout(false);
