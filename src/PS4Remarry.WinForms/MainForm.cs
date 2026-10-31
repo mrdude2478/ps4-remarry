@@ -1,5 +1,6 @@
 using PS4Remarry.Core;
 using System.Diagnostics;
+using System.Media;
 
 namespace PS4Remarry.WinForms;
 
@@ -381,6 +382,7 @@ public partial class MainForm : Form
             }
 
             statusLabel.Text = "Done.";
+            PlaySound("complete.wav");
             MessageBox.Show(this, "Remarry complete.\n\nOutput folder:\n" + output,
                 "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
@@ -514,6 +516,7 @@ public partial class MainForm : Form
             }
 
             statusLabel.Text = "Merge done.";
+            PlaySound("complete.wav");
             MessageBox.Show(this,
                 "Merge complete.\n\nOutput folder:\n" + outDir,
                 "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -1014,5 +1017,21 @@ public partial class MainForm : Form
     private void batchTab_Load(object sender, EventArgs e)
     {
 
+    }
+
+    private void PlaySound(string fileName)
+    {
+        var assembly = typeof(MainForm).Assembly;
+        string? resourceName = assembly.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith(fileName, StringComparison.OrdinalIgnoreCase));
+
+        if (resourceName == null)
+        {
+            MessageBox.Show($"Embedded resource not found: {fileName}");
+            return;
+        }
+
+        using var stream = assembly.GetManifestResourceStream(resourceName);
+        using var player = new SoundPlayer(stream);
+        player.Play();
     }
 }

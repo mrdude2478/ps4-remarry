@@ -21,11 +21,16 @@
 
   <ItemGroup>
     <None Include="..\..\tools\**\*" Link="tools\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Remove="complete.wav" />
     <None Include="..\..\tools\.ps4remarry-trusted" Link="tools\.ps4remarry-trusted" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\..\tools\.ps4remarry-trusted')" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="status.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="complete.wav" />
   </ItemGroup>
 
 </Project>

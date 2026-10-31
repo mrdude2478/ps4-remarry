@@ -18,6 +18,9 @@ partial class MainForm
     
     private System.Windows.Forms.TabPage    tabFileList;
     private PS4Remarry.WinForms.FileListTab fileListTab;
+    
+    private System.Windows.Forms.TabPage     tabKeystone;
+    private PS4Remarry.WinForms.KeystoneTab  keystoneTab;
 
     private System.Windows.Forms.Label   lblGame;
     private System.Windows.Forms.RichTextBox txtGame;
@@ -88,6 +91,8 @@ partial class MainForm
         dlcTab = new DlcTab();
         tabFileList = new TabPage();
         fileListTab = new FileListTab();
+        tabKeystone = new TabPage();
+        keystoneTab = new KeystoneTab();
         statusStrip = new StatusStrip();
         statusLabel = new ToolStripStatusLabel();
         tabControl.SuspendLayout();
@@ -108,6 +113,7 @@ partial class MainForm
         tabControl.Controls.Add(tabRepack);
         tabControl.Controls.Add(tabDlc);
         tabControl.Controls.Add(tabFileList);
+        tabControl.Controls.Add(tabKeystone);
         tabControl.Dock = DockStyle.Fill;
         tabControl.Location = new Point(0, 0);
         tabControl.Name = "tabControl";
@@ -459,6 +465,25 @@ partial class MainForm
         fileListTab.Name = "fileListTab";
         fileListTab.Size = new Size(797, 485);
         fileListTab.TabIndex = 0;
+        //
+        // tabKeystone
+        // 
+        tabKeystone.Controls.Add(keystoneTab);
+        tabKeystone.Location = new Point(4, 24);
+        tabKeystone.Name     = "tabKeystone";
+        tabKeystone.Padding  = new Padding(3);
+        tabKeystone.Size     = new Size(803, 491);
+        tabKeystone.TabIndex = 6;
+        tabKeystone.Text     = "Keystone";
+        tabKeystone.UseVisualStyleBackColor = true;
+        // 
+        // keystoneTab
+        // 
+        keystoneTab.Dock     = DockStyle.Fill;
+        keystoneTab.Location = new Point(3, 3);
+        keystoneTab.Name     = "keystoneTab";
+        keystoneTab.Size     = new Size(797, 485);
+        keystoneTab.TabIndex = 0;
         // 
         // statusStrip
         // 
@@ -496,6 +521,7 @@ partial class MainForm
         tabRepack.ResumeLayout(false);
         tabDlc.ResumeLayout(false);
         tabFileList.ResumeLayout(false);
+        tabKeystone.ResumeLayout(false);
         statusStrip.ResumeLayout(false);
         statusStrip.PerformLayout();
         ResumeLayout(false);
