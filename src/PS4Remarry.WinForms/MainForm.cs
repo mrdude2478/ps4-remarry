@@ -39,6 +39,10 @@ public partial class MainForm : Form
 
         UpdateRunButtonState();
         FormClosed += (_, _) => psnSearchTab.Shutdown();
+        tabControl.SelectedIndexChanged += (_, _) =>
+        {
+            if (tabControl.SelectedTab == tabPkgDb) pkgDbTab.ActivateTab();
+        };
     }
 
     // ---------- Browse handlers ----------

@@ -23,6 +23,8 @@ partial class MainForm
     private PS4Remarry.WinForms.KeystoneTab  keystoneTab;
     private System.Windows.Forms.TabPage     tabPsn;
     private PS4Remarry.WinForms.PsnSearchTab psnSearchTab;
+    private System.Windows.Forms.TabPage     tabPkgDb;
+    private PS4Remarry.WinForms.PkgDbTab      pkgDbTab;
 
     private System.Windows.Forms.Label   lblGame;
     private System.Windows.Forms.RichTextBox txtGame;
@@ -97,6 +99,8 @@ partial class MainForm
         keystoneTab = new KeystoneTab();
         tabPsn = new TabPage();
         psnSearchTab = new PsnSearchTab();
+        tabPkgDb = new TabPage();
+        pkgDbTab = new PkgDbTab();
         statusStrip = new StatusStrip();
         statusLabel = new ToolStripStatusLabel();
         tabControl.SuspendLayout();
@@ -108,6 +112,7 @@ partial class MainForm
         tabFileList.SuspendLayout();
         tabKeystone.SuspendLayout();
         tabPsn.SuspendLayout();
+        tabPkgDb.SuspendLayout();
         statusStrip.SuspendLayout();
         SuspendLayout();
         // 
@@ -121,6 +126,7 @@ partial class MainForm
         tabControl.Controls.Add(tabKeystone);
         tabControl.Controls.Add(tabDlc);
         tabControl.Controls.Add(tabPsn);
+        tabControl.Controls.Add(tabPkgDb);
         tabControl.Dock = DockStyle.Fill;
         tabControl.Location = new Point(0, 0);
         tabControl.Name = "tabControl";
@@ -511,6 +517,25 @@ partial class MainForm
         psnSearchTab.Size = new Size(797, 485);
         psnSearchTab.TabIndex = 0;
         // 
+        // tabPkgDb
+        // 
+        tabPkgDb.Controls.Add(pkgDbTab);
+        tabPkgDb.Location = new Point(4, 24);
+        tabPkgDb.Name = "tabPkgDb";
+        tabPkgDb.Padding = new Padding(3);
+        tabPkgDb.Size = new Size(803, 491);
+        tabPkgDb.TabIndex = 8;
+        tabPkgDb.Text = "PKG Database";
+        tabPkgDb.UseVisualStyleBackColor = true;
+        // 
+        // pkgDbTab
+        // 
+        pkgDbTab.Dock = DockStyle.Fill;
+        pkgDbTab.Location = new Point(3, 3);
+        pkgDbTab.Name = "pkgDbTab";
+        pkgDbTab.Size = new Size(797, 485);
+        pkgDbTab.TabIndex = 0;
+        // 
         // statusStrip
         // 
         statusStrip.Items.AddRange(new ToolStripItem[] { statusLabel });
@@ -549,6 +574,7 @@ partial class MainForm
         tabFileList.ResumeLayout(false);
         tabKeystone.ResumeLayout(false);
         tabPsn.ResumeLayout(false);
+        tabPkgDb.ResumeLayout(false);
         statusStrip.ResumeLayout(false);
         statusStrip.PerformLayout();
         ResumeLayout(false);
